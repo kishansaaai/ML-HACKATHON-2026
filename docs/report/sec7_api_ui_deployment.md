@@ -94,15 +94,19 @@ POST /predict {"trip_id": "00000052"}  -> HTTP 200 (summary of the response)
 }
 ```
 
-![Figure 10. Screenshot of the CMD console of the API process on the receiving laptop (Laptop 1) while it serves student_test requests: server start-up, `GET /health`, `GET /trips` and one log line per `POST /predict` with trip, observation count, classifier and HMM Top-1, continuity and total time.](docs/report/fig/api_cmd_console.png)
+![Figure 10. Screenshot of the CMD console of the API process on the receiving laptop (Laptop 1) while it serves student_test requests: server start-up, `GET /health`, `GET /trips` and one log line per `POST /predict` with trip, observation count, classifier and HMM Top-1, continuity and total time. Lines from 127.0.0.1 are development requests sent from the same laptop through the UI; the health check and the last `POST /predict` (trip 00000052) come from the second laptop, 10.222.216.186.](docs/report/fig/api_cmd_console.png)
 
 The same log lines as text (also written to `logs/api.log`):
 
 ```
-[2026-11-18T15:43:39Z] POST /predict trip_id=00000000 | obs=2503 | clf_top1=95.3% | hmm_top1=95.6% | continuity=99.2% | total=3.87s
-[2026-11-18T15:44:22Z] POST /predict trip_id=00000052 | obs=262 | clf_top1=97.3% | hmm_top1=98.1% | continuity=95.8% | total=1.01s
-[2026-11-18T15:46:28Z] POST /predict trip_id=00000009 | obs=1049 | clf_top1=88.5% | hmm_top1=89.3% | continuity=93.9% | total=5.85s
-[2026-11-18T15:46:35Z] POST /predict trip_id=00000040 | obs=2995 | clf_top1=96.1% | hmm_top1=96.4% | continuity=98.8% | total=6.58s
+[2026-11-18T16:18:09Z] POST /predict trip_id=00000052 | obs=262 | clf_top1=97.3% | hmm_top1=98.1% | continuity=95.8% | total=1.30s
+[2026-11-18T16:18:18Z] POST /predict trip_id=00000052 | obs=262 | clf_top1=97.3% | hmm_top1=98.1% | continuity=95.8% | total=0.21s
+[2026-11-18T16:18:24Z] POST /predict trip_id=00000009 | obs=1049 | clf_top1=88.5% | hmm_top1=89.3% | continuity=93.9% | total=2.49s
+[2026-11-18T16:18:36Z] POST /predict trip_id=00000077 | obs=3911 | clf_top1=78.3% | hmm_top1=77.8% | continuity=98.2% | total=5.29s
+[2026-11-18T16:18:46Z] POST /predict trip_id=00000000 | obs=2503 | clf_top1=95.3% | hmm_top1=95.6% | continuity=99.2% | total=2.43s
+[2026-11-18T16:19:05Z] POST /predict trip_id=00000091 | obs=874 | clf_top1=91.2% | hmm_top1=91.0% | continuity=95.3% | total=2.04s
+[2026-11-18T16:20:36Z] POST /predict trip_id=00000091 | obs=874 | clf_top1=91.2% | hmm_top1=91.0% | continuity=95.3% | total=4.33s
+[2026-11-18T16:21:06Z] POST /predict trip_id=00000052 | obs=262 | clf_top1=97.3% | hmm_top1=98.1% | continuity=95.8% | total=0.94s
 ```
 
 ## 7.4 No ground-truth leakage

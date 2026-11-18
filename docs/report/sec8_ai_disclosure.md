@@ -2,7 +2,7 @@
 
 ## 8.1 AI assistance
 
-The team used an AI coding assistant (Claude Code, Anthropic) throughout the project: to write and review code and tests, run experiments, analyse results, write the repository notes, and draft this report. The team states that its course staff allowed AI assistance for writing the report. AI output was checked against the repository: every number in this report comes from a result file produced by a committed script (the source file is named next to the number), and the whole pipeline can be rebuilt from a fresh clone (`README.md`). Team members remain responsible for understanding and explaining all submitted work; AI-written text is not experimental evidence and was not used as such.
+An AI coding assistant (Claude Code, Anthropic) was used to help write and review code and tests, run experiments, and draft the repository notes and this report. Every number in this report comes from a result file produced by a committed script. Team members are responsible for understanding and explaining all submitted work.
 
 ## 8.2 Limitations (stated plainly)
 

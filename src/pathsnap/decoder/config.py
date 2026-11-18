@@ -1,15 +1,15 @@
-"""Decoder parameters. Defaults are starting engineering values, not tuned claims."""
+"""Decoder parameters; defaults are frozen from OOF training-trip tuning."""
 
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
 class DecoderConfig:
-    beta_m: float = 50.0
-    emission_sigma_m: float | None = None
-    gap_threshold_s: float = 120.0
+    beta_m: float = 200.0
+    emission_sigma_m: float | None = 25.0
+    gap_threshold_s: float = 30.0
     transition_cutoff_m: float = 10_000.0
-    unreachable_log_penalty: float = -20.0
+    unreachable_log_penalty: float = -5.0
     min_probability: float = 1e-12
     spatial_cell_m: float = 128.0
     max_cells_per_arc: int = 256

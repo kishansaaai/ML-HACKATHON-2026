@@ -35,7 +35,7 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    :root { --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --brand:#0f766e; --bg-soft:#f8fafc; }
+    :root { --muted: rgba(128,128,128,0.95); --line: rgba(128,128,128,0.28); --soft: rgba(128,128,128,0.12); --brand:#0f9d8a; }
     [data-testid="stToolbar"], [data-testid="stDecoration"], footer { display: none !important; }
     .block-container { max-width: 1180px; padding-top: 3.6rem; padding-bottom: 3rem; }
     [data-testid="stHeader"] { background: transparent; }
@@ -44,24 +44,21 @@ st.markdown(
     h2, h3 { font-weight: 650 !important; letter-spacing: -0.01em; }
     [data-testid="stSidebar"] { border-right: 1px solid var(--line); }
     [data-testid="stSidebar"] h2 { font-size: 1rem !important; }
-    .app-sub { color: var(--muted); font-size: 0.9rem; margin: 2px 0 14px 0; }
-    .status-pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:600; }
-    .status-ok { background:#dcfce7; color:#166534; }
-    .status-err { background:#fee2e2; color:#991b1b; }
-    .backend-banner { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;
-        padding:8px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem; }
-    .backend-banner code { background: rgba(255,255,255,0.22); padding:1px 6px; border-radius:4px; color:inherit; }
-    .backend-banner-red { background:#b91c1c; color:#fff; }
-    .backend-banner-green { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
-    .backend-banner-green code { background:#d1fae5; }
-    .chip { display:inline-block; background:var(--bg-soft); border:1px solid var(--line); color:var(--ink);
-        padding:3px 10px; border-radius:999px; font-size:0.8rem; margin:0 6px 0 0; }
+    .app-sub { color: var(--muted); font-size: 0.9rem; margin: 2px 0 12px 0; }
+    .status-pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:600;
+        background: rgba(34,197,94,0.18); color: #22c55e; }
+    .status-err { background: rgba(239,68,68,0.18); color: #ef4444; }
+    .chip { display:inline-block; background:var(--soft); border:1px solid var(--line); color:inherit;
+        padding:3px 11px; border-radius:999px; font-size:0.8rem; margin:0 8px 6px 0; }
+    .chip b { font-weight:600; }
+    .chip-warn { border-color: rgba(245,158,11,0.6); background: rgba(245,158,11,0.14); }
+    .backend-down { padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.9rem;
+        background: rgba(239,68,68,0.16); border:1px solid rgba(239,68,68,0.5); }
     .section-label { color:var(--muted); font-size:0.75rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; margin:18px 0 6px 0; }
-    [data-testid="stMetric"] { padding: 2px 4px; }
     [data-testid="stMetricLabel"] p { color: var(--muted); font-size: 0.8rem; }
     [data-testid="stMetricValue"] { font-size: 1.75rem; font-weight: 700; }
-    .stButton > button[kind="primary"] { background: var(--brand); border-color: var(--brand); font-weight: 600; }
-    .stButton > button[kind="primary"]:hover { background:#115e59; border-color:#115e59; }
+    .stButton > button[kind="primary"] { background: var(--brand); border-color: var(--brand); color:#fff; font-weight: 600; }
+    .stButton > button[kind="primary"]:hover { background:#0b7d6e; border-color:#0b7d6e; color:#fff; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -144,7 +141,7 @@ def _refresh_backend(api_url: str) -> None:
 
 
 def _render_backend_header_banner() -> None:
-    """One slim line: model and partition are always visible; red unless a real evaluator backend."""
+    """Model and partition are always visible as small neutral labels; a red box only if the backend is down."""
     health = st.session_state["health_info"]
     health_err = st.session_state["health_error"]
     fallback_partition = st.session_state.get("partition")
@@ -152,26 +149,21 @@ def _render_backend_header_banner() -> None:
     if health is None:
         if health_err:
             st.markdown(
-                '<div class="backend-banner backend-banner-red"><strong>Backend unreachable</strong>'
-                "<span>Cannot verify model or partition via <code>GET /health</code>.</span></div>",
+                '<div class="backend-down"><strong>Backend unreachable.</strong> '
+                "Cannot verify model or partition via <code>GET /health</code>.</div>",
                 unsafe_allow_html=True,
             )
         return
 
-    safe_model = html.escape(str(health.get("model_name") or "unknown"))
-    safe_partition = html.escape(str(health.get("partition") or fallback_partition or "unknown"))
-    if _is_mock_or_non_evaluator(health, fallback_partition):
-        st.markdown(
-            f'<div class="backend-banner backend-banner-red"><strong>Development data, not the final evaluation</strong>'
-            f"<span>Model <code>{safe_model}</code></span><span>Partition <code>{safe_partition}</code></span></div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            f'<div class="backend-banner backend-banner-green"><strong>Evaluation backend connected</strong>'
-            f"<span>Model <code>{safe_model}</code></span><span>Partition <code>{safe_partition}</code></span></div>",
-            unsafe_allow_html=True,
-        )
+    model = html.escape(str(health.get("model_name") or "unknown"))
+    partition = html.escape(str(health.get("partition") or fallback_partition or "unknown"))
+    dev = _is_mock_or_non_evaluator(health, fallback_partition)
+    note = " · development data" if dev else ""
+    st.markdown(
+        f'<span class="chip">Model <b>{model}</b></span>'
+        f'<span class="chip {"chip-warn" if dev else ""}">Partition <b>{partition}</b>{note}</span>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_sidebar() -> str:

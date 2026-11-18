@@ -1,11 +1,2 @@
-# One fixed light theme so the screen looks the same on every laptop and browser,
-# whatever the operating-system dark/light setting is.
-[theme]
-base = "light"
-primaryColor = "#0f766e"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f1f5f9"
-textColor = "#0f172a"
-
 [browser]
 gatherUsageStats = false

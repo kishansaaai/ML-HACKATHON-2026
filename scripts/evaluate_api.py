@@ -58,7 +58,7 @@ async def evaluate(out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     current = pd.DataFrame(rows).sort_values("trip_id")
     current.to_csv(out, index=False, quoting=csv.QUOTE_MINIMAL)
-    reference_path = ROOT / "results" / "pipeline_student_test_default.csv"
+    reference_path = ROOT / "results" / "hmm_tuning" / "final_student_test_check.csv"   # official pipeline output with the frozen (tuned) decoder
     reference = pd.read_csv(reference_path, dtype={"trip_id": str}).sort_values("trip_id")
     current["trip_id"] = current.trip_id.astype(str).str.zfill(8)
     if set(current.trip_id) != set(reference.trip_id):

@@ -10,21 +10,22 @@ Every team member must be able to explain their own work **and** the end-to-end 
   - Enforces clean client-server separation: **Laptop 1** hosts the trained model, road networks, HMM/Viterbi decoder, and ground-truth `.route` files; **Laptop 2** runs only a thin presentation UI.
 - **How do you prevent data leakage / hardcoding in the UI?**
   - The UI (`ui/app.py`, `ui/api_client.py`) has **no access** to dataset folders or `.route` files and performs zero ML inference.
-  - It sends only `{"trip_id": "<id>"}` to `POST /predict`. Clicking **Run** always triggers a fresh live API request (never cached by trip ID), visible immediately in Laptop 1's CMD logs.
+  - It sends only `{"trip_id": "<id>"}` to `POST /predict`. Clicking **Match route** always triggers a fresh live API request (never cached by trip ID), visible immediately in Laptop 1's CMD logs.
   - The API never returns `.route` ground truth—only predicted routes and server-computed metrics.
-- **How does the UI guard against accidentally demoing a mock or dev backend?**
-  - On load (and refresh), the UI calls `GET /health` and displays `model_name` (read server-side from `artifacts/model_card.json`, key `"model"`) and `partition` in the page header.
-  - If `model_name` contains `"MOCK"` (case-insensitive) or `partition` is not the evaluator partition, the header shows a prominent red **`DEV MOCK BACKEND - NOT FOR FINAL EVALUATION`** banner; only a real model on the evaluator partition shows the green ready banner.
+- **How does the UI guard against accidentally demoing a dev backend?**
+  - On load (and on **Check connection**), the UI calls `GET /health`. The model name (read server-side from `artifacts/model_card.json`, key `"model"`, shown as e.g. `LightGBM (exported)`) appears as a small chip at the top of the page, and the `partition` appears in the sidebar connection status (`student_test` while rehearsing, `evaluator` at the real run).
+  - There is no coloured mock banner. The check is manual: before the evaluation, confirm the sidebar says `Partition: evaluator`. If the backend is down, a red "Backend unreachable" box is shown.
 - **How are route breaks and coordinate order handled on the map?**
   - The API contract uses `[lat, lon]` for every coordinate (the backend converts the decoder's internal `[lon, lat]` output to `[lat, lon]`).
   - `ui/map_renderer.py` validates every coordinate (`lat` in `[-90, 90]`, `lon` in `[-180, 180]`, finite numbers), skips invalid points, and triggers a UI warning if any point is skipped so a swapped `[lon, lat]` bug cannot silently misplace a route.
   - When the decoder splits a disconnected route into `hmm_route_segments`, `map_renderer.py` draws each segment as its own `folium.PolyLine` (never connecting separate segments with false straight lines) and falls back to `hmm_route_polyline` only if `hmm_route_segments` is absent. The route-break count (`metrics.hmm.continuity_breaks`) is displayed right beside the map.
 - **Why Streamlit + Folium?**
-  - Matches the project's Python + Folium stack, renders interactive multi-layer maps (`Raw GPS`, `HMM Route`, `Classifier-Only`) on `OpenStreetMap` tiles with `LayerControl`, legends, and `prefer_canvas=True`.
+  - Matches the project's Python + Folium stack, renders interactive multi-layer maps (`Raw GPS Observations`, `Classifier-Only Predictions`, `HMM / Viterbi Predicted Route`, `Start & End Markers`) on `OpenStreetMap` tiles with `LayerControl`, legends, and `prefer_canvas=True`.
   - `st_folium(..., returned_objects=[])` avoids redundant Streamlit reruns while panning or zooming.
 - **How is cross-laptop networking configured?**
-  - Laptop 1 binds FastAPI to `0.0.0.0:8000` with CORS enabled.
-  - Laptop 2 configures `API_BASE_URL` in one place (`ui/config.py`, `PATHSNAP_API_URL` env var, or the sidebar field).
+  - Laptop 1 binds FastAPI to `0.0.0.0:8000` with CORS enabled (`uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000`).
+  - Laptop 2 configures the API address in one place (`ui/config.py` default `http://127.0.0.1:8000`, the `PATHSNAP_API_URL` env var, or the sidebar "API address" field). The UI itself runs on Streamlit's default port 8501 (`run_ui.bat <api-url>`).
+- What the page shows: model chip, trip dropdown plus **Match route** button, a KPI card (HMM Top-1, route continuity, sequence F1, server time), the map, then tabs **Classifier vs HMM**, **Timings**, **Observations**, **API response**.
 
 ---
 

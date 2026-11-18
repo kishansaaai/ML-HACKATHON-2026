@@ -14,7 +14,7 @@ All 90 trip folders contain valid `.track`, `.nodes`, `.arcs` and `.route` files
 ## Quality and modeling implications
 
 - No invalid GPS coordinates, invalid arc endpoints, or non-increasing timestamp transitions were found by the initial checks. No isolated nodes were found.
-- In the training partition, approximately 96.5% of consecutive timestamp intervals are exactly 1 second. There are 2,937 intervals longer than 2 seconds across training trips; 1,260 intervals are longer than 5 seconds. The student-test partition has 44 intervals longer than 5 seconds. B's decoder should segment or otherwise handle these gaps explicitly.
+- In the training partition, approximately 96.5% of consecutive timestamp intervals are exactly 1 second. There are 2,937 intervals longer than 2 seconds across training trips; 1,216 intervals are longer than 5 seconds. The student-test partition has 44 intervals longer than 5 seconds. B's decoder should segment or otherwise handle these gaps explicitly.
 - Every train trip has at least one weakly connected non-isolated graph component, but 79 of 80 have more than one. Per-trip component counts have median 20 and maximum 421. The topology is therefore not a single connected network; graph reachability and disconnected transitions need explicit handling. Components are counted on an undirected interpretation of the directed arc rows for this diagnostic.
 - The median reference-route length is about 18.9% of the corresponding GPS row count. A GPS row is not an arc label: per-observation labels require A's monotone route alignment.
 - Trip-local road networks must remain separate. Projection is performed per trip and coordinates from different trips must not share one origin.
@@ -28,5 +28,5 @@ At a raw radius of 50 m, the reference arc falls outside the radius for about 1.
 
 These are descriptive findings only. Monotone route alignment can still assign uncertain labels, and the student-test sample has only ten trips. They do not establish generalization to the withheld evaluator set.
 
-The scored in-process API run is recorded in `results/api_student_test.csv`. Across its 19,160 observations, the classifier reached 0.9016 Top-1 and HMM/Viterbi reached 0.8991; transition continuity improved from 0.9602 to 0.9784. Thus, this development sample supports a continuity gain but not an overall observation-accuracy gain. One trip had a stitched-route break, and trip `00000056` exceeded the 30-second inference target at 44.5 seconds. See the per-trip table and decoder handoff in the technical report.
+The scored in-process API run is recorded in `results/api_student_test.csv`. Across its 19,160 observations (19,143 labelled), the classifier reached 0.9021 Top-1 and HMM/Viterbi with the frozen tuned decoder reached 0.9071; mean trip route continuity improved from 0.9558 to 0.9697. 3 trips had a stitched-route break, and the slowest trip, `00000056`, took 15.4 seconds (target: 30 seconds). See the per-trip table and decoder handoff in the technical report.
 

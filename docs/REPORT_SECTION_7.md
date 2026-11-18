@@ -14,14 +14,15 @@ PathSnap is deployed across two laptops connected over a shared local network (L
   - Runs the prediction pipeline (`predict_trip`) strictly on `.track`, `.nodes`, and `.arcs`, and converts the decoder's `[lon, lat]` coordinates to `[lat, lon]` before serializing JSON. Only after prediction completes does the isolated server-side scoring module (`scoring.py`) read the trip's `.route` file to compute evaluation metrics.
   - Logs every incoming request (timestamp, `trip_id`, stage timings, and resulting metrics) to the Laptop 1 console for live verification during evaluation.
 
-- **Laptop 2 — Evaluator User Interface (`Streamlit + Folium`, port `8501`):**
+- **Laptop 2 — Evaluator User Interface (`Streamlit + Folium`, default port `8501`):**
   - Connects to Laptop 1 using a single configurable API base URL (`PATHSNAP_API_URL`, configurable via `ui/config.py`, environment variable, or the sidebar input).
   - Performs **zero** local machine learning inference, route decoding, or file reads. It fetches the ten evaluation trip IDs via `GET /trips`, sends only `{"trip_id": "<id>"}` to `POST /predict`, and renders the returned JSON response.
   - Displays:
-    - A page-header backend status banner showing `model_name` and `partition` from `GET /health` (green for the real model on the evaluator partition; prominent red **`DEV MOCK BACKEND - NOT FOR FINAL EVALUATION`** banner if a mock backend or non-evaluator partition is connected).
-    - Ten selectable trip cards with a dedicated **Run Map-Matching** trigger and loading spinner.
+    - The model name (from `GET /health`, e.g. `LightGBM (exported)`) as a small chip at the top of the page, and the active `partition` in the sidebar connection status (`student_test` while rehearsing, `evaluator` at the real run). A red "Backend unreachable" box appears only if `GET /health` fails.
+    - A trip dropdown (one entry per trip returned by `GET /trips`, labelled with its GPS-point count) and a **Match route** button with a loading spinner.
+    - A KPI card for the selected trip (HMM Top-1 accuracy, route continuity with break count, sequence F1, server time), each compared against the classifier alone where applicable.
     - An interactive Folium map (`OpenStreetMap` tiles, `prefer_canvas=True`, auto-fitted bounds, legend, and `LayerControl`) that validates `[lat, lon]` coordinates (warning if any out-of-range point is skipped) and draws each connected segment in `hmm_route_segments` as its own `PolyLine` without joining disconnected breaks, alongside the route-break count (`metrics.hmm.continuity_breaks`).
-    - A Classifier-Only vs. Classifier + HMM metrics comparison table and per-stage server latency breakdown populated directly from the API response.
+    - Below the map, tabs **Classifier vs HMM** (metric table), **Timings** (per-stage server latency), **Observations** (first 100 per-point records) and **API response** (the JSON with long lists collapsed), plus a **Download map (HTML)** button.
     - Clear, readable error states if Laptop 1 is unreachable or returns an HTTP error.
 
 ---
@@ -39,10 +40,10 @@ PathSnap is deployed across two laptops connected over a shared local network (L
 ## 7.3 Working UI Screenshots (Laptop 2)
 
 > **[Insert Figure 7.1: `docs/screenshots/ui_trip_selector.png`]**
-> *Figure 7.1: PathSnap Evaluator Console running on Laptop 2, showing the green backend status banner (`model_name` and evaluator partition) and the ten dynamically loaded evaluation trip cards.*
+> *Figure 7.1: PathSnap Evaluator Console running on Laptop 2, showing the model-name chip at the top, the partition in the sidebar connection status, and the trip dropdown with the Match route button.*
 
 > **[Insert Figure 7.2: `docs/screenshots/ui_route_map_and_metrics.png`]**
-> *Figure 7.2: Interactive Folium route visualization (with route-break count and separate segment polylines) and Classifier-Only vs. Classifier + HMM evaluation metrics returned by Laptop 1 for a selected evaluation trip.*
+> *Figure 7.2: Interactive Folium route visualization (with route-break count and separate segment polylines) and KPI card and the Classifier vs HMM table returned by Laptop 1 for a selected evaluation trip.*
 
 ---
 
@@ -58,7 +59,8 @@ PathSnap is deployed across two laptops connected over a shared local network (L
 1. **Laptop 1 (Backend):**
    ```powershell
    pip install -r requirements.txt
-   uvicorn api.main:app --host 0.0.0.0 --port 8000
+   pip install -e .
+   uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000
    ```
 2. **Laptop 2 (Evaluator UI):**
    ```powershell
@@ -66,4 +68,4 @@ PathSnap is deployed across two laptops connected over a shared local network (L
    pip install -r requirements.txt
    run_ui.bat http://<LAPTOP_1_IP>:8000
    ```
-3. Open `http://localhost:8501` on Laptop 2, confirm the green header banner displays the real model name and evaluator partition, select any evaluation trip, and click **Run Map-Matching**.
+3. Open `http://localhost:8501` on Laptop 2, confirm the chip at the top shows the real model name and the sidebar shows `Partition: evaluator`, choose a trip in the dropdown, and click **Match route**.

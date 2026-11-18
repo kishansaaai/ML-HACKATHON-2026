@@ -52,6 +52,7 @@ DEFAULT_OUT = REPO_ROOT / "output" / "pdf" / "PathSnap_technical_report_final.pd
 TITLE = "PathSnap: Distributed Map-Matching and Route Reconstruction"
 COURSE = "Machine Learning"
 INSTITUTION = "PES University, Department of Computer Science and Engineering, RR Campus"
+TEAM_TEXT = "Team member names and SRNs: [fill in]"   # overridden by <src>/team.txt when present
 EXPECTED_FILES = [
     "sec1_overview.md",
     "sec2_data_eda.md",
@@ -494,7 +495,7 @@ class Builder:
 def title_page(st: dict[str, ParagraphStyle], width: float, drafts: list[str], date: str) -> list:
     team = Table(
         [[Paragraph("<b>Team</b>", st["body"])],
-         [Paragraph("Team member names and SRNs: [fill in]", st["body"])]],
+         [Paragraph(escape(TEAM_TEXT).replace(chr(10), "<br/>"), st["body"])]],
         colWidths=[width * 0.8],
     )
     team.setStyle(TableStyle([
@@ -529,6 +530,9 @@ def build(src: Path = DEFAULT_SRC, out: Path = DEFAULT_OUT) -> Path:
     """Build the PDF; returns the output path."""
     _setup_fonts()
     src, out = Path(src), Path(out)
+    global TEAM_TEXT
+    if (src / "team.txt").is_file():
+        TEAM_TEXT = (src / "team.txt").read_text(encoding="utf-8").strip()
     st = make_styles()
     out.parent.mkdir(parents=True, exist_ok=True)
 

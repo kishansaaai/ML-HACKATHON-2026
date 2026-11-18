@@ -1,0 +1,7 @@
+Team members and roles
+Person A: data pipeline, classifier, integration
+Person B: HMM / Viterbi decoder
+Person C: API, scoring, EDA, simple models
+Person D: evaluator UI
+
+Names and SRNs: ______________________________

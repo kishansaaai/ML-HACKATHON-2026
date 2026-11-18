@@ -1,0 +1,2 @@
+  [extra_trees] fold 0: top1=0.8169 macroF1=0.9045 logloss=0.0786 fit=77s
+  [extra_trees] fold 1: top1=0.8454 macroF1=0.9123 logloss=0.0824 fit=79s

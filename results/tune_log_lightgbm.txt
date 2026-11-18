@@ -1,0 +1,60 @@
+trial 0: top1=0.8703 logloss=0.0681 obj=0.8669 (42s)
+trial 1: top1=0.8736 logloss=0.0635 obj=0.8704 (15s)
+trial 2: top1=0.8740 logloss=0.0637 obj=0.8708 (24s)
+trial 3: top1=0.8740 logloss=0.0641 obj=0.8708 (18s)
+trial 4: top1=0.8717 logloss=0.0667 obj=0.8684 (38s)
+trial 5: top1=0.8738 logloss=0.0647 obj=0.8705 (11s)
+trial 6: top1=0.8736 logloss=0.0635 obj=0.8704 (64s)
+trial 7: top1=0.8736 logloss=0.0676 obj=0.8702 (12s)
+trial 8: top1=0.8729 logloss=0.0648 obj=0.8697 (12s)
+trial 9: top1=0.8731 logloss=0.0648 obj=0.8699 (32s)
+trial 10: top1=0.8733 logloss=0.0814 obj=0.8692 (64s)
+trial 11: top1=0.8728 logloss=0.0643 obj=0.8696 (20s)
+trial 12: top1=0.8723 logloss=0.0660 obj=0.8690 (22s)
+trial 13: top1=0.8739 logloss=0.0637 obj=0.8707 (24s)
+trial 14: top1=0.8732 logloss=0.0648 obj=0.8700 (23s)
+trial 15: top1=0.8723 logloss=0.0657 obj=0.8690 (19s)
+trial 16: top1=0.8738 logloss=0.0636 obj=0.8706 (21s)
+trial 17: top1=0.8742 logloss=0.0630 obj=0.8711 (22s)
+trial 18: top1=0.8747 logloss=0.0639 obj=0.8715 (29s)
+trial 19: top1=0.8742 logloss=0.0632 obj=0.8710 (35s)
+trial 20: top1=0.8742 logloss=0.0657 obj=0.8709 (45s)
+trial 21: top1=0.8739 logloss=0.0632 obj=0.8707 (16s)
+trial 22: top1=0.8735 logloss=0.0635 obj=0.8703 (18s)
+trial 23: top1=0.8742 logloss=0.0625 obj=0.8710 (19s)
+trial 24: top1=0.8738 logloss=0.0634 obj=0.8706 (24s)
+trial 25: top1=0.8740 logloss=0.0626 obj=0.8708 (21s)
+trial 26: top1=0.8738 logloss=0.0629 obj=0.8706 (24s)
+trial 27: top1=0.8744 logloss=0.0628 obj=0.8713 (23s)
+trial 28: top1=0.8741 logloss=0.0634 obj=0.8709 (12s)
+trial 29: top1=0.8734 logloss=0.0634 obj=0.8702 (16s)
+trial 30: top1=0.8730 logloss=0.0633 obj=0.8699 (19s)
+trial 31: top1=0.8733 logloss=0.0630 obj=0.8702 (18s)
+trial 32: top1=0.8742 logloss=0.0637 obj=0.8710 (20s)
+trial 33: top1=0.8738 logloss=0.0628 obj=0.8707 (28s)
+best: {
+  "n_trials": 34,
+  "search_seconds": 850.2,
+  "search_train_stride": 6,
+  "objective": "mean CV top1 - 0.05*logloss",
+  "best_objective": 0.8715208541854664,
+  "best_trial_cv_top1": 0.874717660402428,
+  "best_params": {
+    "num_leaves": 61,
+    "learning_rate": 0.0951585672042433,
+    "n_estimators": 250,
+    "min_child_samples": 63,
+    "subsample": 0.8476140214442394,
+    "colsample_bytree": 0.6531727202376628,
+    "reg_lambda": 0.7855214486451493,
+    "reg_alpha": 0.06231955573901502
+  }
+}
+  [lightgbm] fold 0: top1=0.8227 macroF1=0.9005 logloss=0.0721 fit=12s
+  [lightgbm] fold 1: top1=0.8477 macroF1=0.9131 logloss=0.0846 fit=9s
+  [lightgbm] fold 2: top1=0.9047 macroF1=0.9423 logloss=0.0591 fit=9s
+  [lightgbm] fold 3: top1=0.8969 macroF1=0.9352 logloss=0.0536 fit=8s
+  [lightgbm] fold 4: top1=0.9011 macroF1=0.9402 logloss=0.0537 fit=7s
+[lightgbm] CV top1 0.8746+-0.0372 | test top1 0.9003 macroF1 0.9416 logloss 0.0481 cont 0.8360
+export: lightgbm (CV top1 tuned 0.8746 vs untuned 0.8748)
+exported artifacts to C:\Users\saiki\OneDrive\Desktop\ML-HACKATHON-2026\artifacts

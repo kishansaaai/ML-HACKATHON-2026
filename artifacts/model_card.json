@@ -1,0 +1,22 @@
+{
+  "model": "lightgbm",
+  "family": "Boosting (leaf-wise GBDT)",
+  "seed": 42,
+  "params": {
+    "n_estimators": 300,
+    "learning_rate": 0.1,
+    "num_leaves": 63,
+    "min_child_samples": 40,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.8,
+    "reg_lambda": 1.0
+  },
+  "train_stride": 3,
+  "trained_on": "80 training trips only (data_cache/candidates/train)",
+  "selected_by": "higher grouped-CV Top-1 between untuned and tuned (student_test not used for selection)",
+  "cv_top1_mean": 0.8748151302980544,
+  "student_test_top1": 0.9021052081700883,
+  "student_test_logloss": 0.048042166196763096,
+  "feature_count": 27
+}

@@ -1,0 +1,18 @@
+{
+  "n_trials": 34,
+  "search_seconds": 850.2,
+  "search_train_stride": 6,
+  "objective": "mean CV top1 - 0.05*logloss",
+  "best_objective": 0.8715208541854664,
+  "best_trial_cv_top1": 0.874717660402428,
+  "best_params": {
+    "num_leaves": 61,
+    "learning_rate": 0.0951585672042433,
+    "n_estimators": 250,
+    "min_child_samples": 63,
+    "subsample": 0.8476140214442394,
+    "colsample_bytree": 0.6531727202376628,
+    "reg_lambda": 0.7855214486451493,
+    "reg_alpha": 0.06231955573901502
+  }
+}

@@ -1,0 +1,12 @@
+  [extra_trees] fold 0: top1=0.8159 macroF1=0.9024 logloss=0.0823 fit=16s
+  [extra_trees] fold 1: top1=0.8455 macroF1=0.9117 logloss=0.0852 fit=16s
+  [extra_trees] fold 2: top1=0.9039 macroF1=0.9416 logloss=0.0632 fit=17s
+  [extra_trees] fold 3: top1=0.8903 macroF1=0.9289 logloss=0.0616 fit=17s
+  [extra_trees] fold 4: top1=0.8958 macroF1=0.9378 logloss=0.0601 fit=21s
+[extra_trees] CV top1 0.8703+-0.0379 | test top1 0.8841 macroF1 0.9328 logloss 0.0561 cont 0.8180
+  [random_forest] fold 0: top1=0.8194 macroF1=0.9035 logloss=0.0918 fit=18s
+  [random_forest] fold 1: top1=0.8485 macroF1=0.9128 logloss=0.0887 fit=18s
+  [random_forest] fold 2: top1=0.9073 macroF1=0.9430 logloss=0.0631 fit=17s
+  [random_forest] fold 3: top1=0.8942 macroF1=0.9347 logloss=0.0621 fit=16s
+  [random_forest] fold 4: top1=0.8972 macroF1=0.9386 logloss=0.0606 fit=16s
+[random_forest] CV top1 0.8733+-0.0377 | test top1 0.8881 macroF1 0.9345 logloss 0.0561 cont 0.8304

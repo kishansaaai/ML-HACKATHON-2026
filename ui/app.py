@@ -42,7 +42,7 @@ st.markdown(
     html, body, [class*="css"] { font-family: "Inter", "Segoe UI", system-ui, sans-serif; }
     h1 { font-size: 1.7rem !important; font-weight: 700 !important; letter-spacing: -0.02em; margin: 0 !important; padding: 0 !important; }
     h2, h3 { font-weight: 650 !important; letter-spacing: -0.01em; }
-    [data-testid="stSidebar"] { background: var(--bg-soft); border-right: 1px solid var(--line); }
+    [data-testid="stSidebar"] { border-right: 1px solid var(--line); }
     [data-testid="stSidebar"] h2 { font-size: 1rem !important; }
     .app-sub { color: var(--muted); font-size: 0.9rem; margin: 2px 0 14px 0; }
     .status-pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:600; }

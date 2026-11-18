@@ -1,6 +1,6 @@
 # Integration of Person A (candidates + classifier) and Person B (HMM decoder)
 
-Branch `integration/a-b` = `a/ml-pipeline` + `feature/person-b-decoder` + the fixes below. Not merged into `main`.
+Historical record of the initial `integration/a-b` snapshot (`a/ml-pipeline` + `feature/person-b-decoder` + the fixes below). This snapshot and the later Person C/D work are now in `main`; for current results use `docs/section5_decoder.md`, `results/hmm_tuning/`, and `docs/REPORT_EVIDENCE_MAP.md`.
 
 ## Fixes made while integrating
 1. **Package clash.** Both branches had a top-level package named `pathsnap` (B at the repo root, A under `src/`). B's code now lives in `src/pathsnap/decoder/`; the root-level `pathsnap/` is gone. One `pip install -e .` covers everything. B's benchmark script was pointed at `src/`.
@@ -20,9 +20,9 @@ Reproduce: `python scripts/eval_pipeline.py` (writes `results/pipeline_student_t
 | LightGBM alone | 90.21 % | 95.58 % | 774 |
 | LightGBM + HMM | 89.89 % | 97.28 % | 413 |
 
-The HMM is better on 5 trips and worse on 5 for Top-1, so with default settings it does **not** improve Top-1; it does roughly halve route breaks. Decoder parameters (beta, optional emission sigma, gap threshold) have not been tuned: do that with group-aware CV on the 80 training trips (`pathsnap.decoder.tuning`, `scripts/eval_pipeline.py --part train`), never on `student_test` after looking at it and never on evaluator data. Do not claim an HMM gain in the report until then.
+In this historical untuned run the HMM was better on five trips and worse on five for Top-1; these numbers are superseded. Person B later selected and froze the decoder settings with out-of-fold scores on the 80 training trips. The current final development check and failure cases are reported in `docs/section5_decoder.md` and `results/hmm_tuning/final_student_test_check.json`. Do not use this historical table as the current result.
 
-## Handoff to Person B: tuning the decoder
+## Historical handoff to Person B: tuning the decoder (completed)
 Out-of-fold (OOF) classifier scores exist so the decoder is tuned on realistic scores. The exported LightGBM was trained on all 80 training trips (Top-1 about 94.5 % on them vs 87.5 % on unseen trips), so tuning on its in-sample scores would tune for over-confident emissions.
 
 ```

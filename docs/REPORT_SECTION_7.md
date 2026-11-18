@@ -1,6 +1,6 @@
 # Section 7: API, UI and Deployment
 
-*(Draft prepared by Person D for inclusion in the team's consolidated Technical Report PDF. Replace screenshot placeholders below with actual captures from the live two-laptop run against the real backend.)*
+*(Section 7 draft for the team's single consolidated Technical Report PDF. Deliverables.pdf requires real screenshots from the working implementation; replace the placeholders below after the two-laptop rehearsal.)*
 
 ---
 
@@ -12,7 +12,7 @@ PathSnap is deployed across two laptops connected over a shared local network (L
   - Hosts the exported LightGBM classifier (described by `artifacts/model_card.json`, key `"model"`), feature configuration, road-network loader, and HMM/Viterbi decoder. No separate feature transform is used at inference time.
   - Exposes three REST endpoints (`GET /health`, `GET /trips`, `POST /predict`) with CORS enabled for cross-laptop UI access.
   - Runs the prediction pipeline (`predict_trip`) strictly on `.track`, `.nodes`, and `.arcs`, and converts the decoder's `[lon, lat]` coordinates to `[lat, lon]` before serializing JSON. Only after prediction completes does the isolated server-side scoring module (`scoring.py`) read the trip's `.route` file to compute evaluation metrics.
-  - Logs every incoming request (timestamp, `trip_id`, stage timings, and resulting metrics) to the Laptop 1 console for live verification during evaluation.
+  - The API prints a prediction summary (UTC timestamp, `trip_id`, observation count, classifier/HMM Top-1, continuity, breaks and total time); Uvicorn access logs show successful endpoint requests. These are the lines to capture on Laptop 1.
 
 - **Laptop 2 — Evaluator User Interface (`Streamlit + Folium`, port `8501`):**
   - Connects to Laptop 1 using a single configurable API base URL (`PATHSNAP_API_URL`, configurable via `ui/config.py`, environment variable, or the sidebar input).
@@ -58,7 +58,7 @@ PathSnap is deployed across two laptops connected over a shared local network (L
 1. **Laptop 1 (Backend):**
    ```powershell
    pip install -r requirements.txt
-   uvicorn api.main:app --host 0.0.0.0 --port 8000
+   uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000
    ```
 2. **Laptop 2 (Evaluator UI):**
    ```powershell

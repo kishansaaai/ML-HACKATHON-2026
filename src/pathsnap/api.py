@@ -8,6 +8,7 @@ import os
 import re
 import time
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -19,7 +20,7 @@ from .clf import _load as load_model
 from .decoder.config import DecoderConfig
 from .decoder.inference import InferenceComponents, predict_trip
 from .io import load_trip
-from .paths import ARTIFACT_DIR, DATA_ROOT
+from .paths import ARTIFACT_DIR, CONFIG_DIR, DATA_ROOT
 from .pipeline import make_components
 from .scoring import score_after_prediction
 
@@ -29,6 +30,14 @@ _EVALUATOR_ROOT = Path(_EVALUATOR_ENV).expanduser() if _EVALUATOR_ENV else None
 _DATA_ROOT = Path(os.getenv("PATHSNAP_DATA", str(DATA_ROOT))).expanduser()
 _DEV_PARTITION = "student_test"
 _MODEL_CARD_PATH = ARTIFACT_DIR / "model_card.json"
+_DECODER_CONFIG_PATH = CONFIG_DIR / "decoder_best.json"
+
+
+@lru_cache(maxsize=1)
+def _decoder_config() -> DecoderConfig:
+    """Load the frozen decoder settings shipped with the repository."""
+    values = json.loads(_DECODER_CONFIG_PATH.read_text(encoding="utf-8"))
+    return DecoderConfig(**values)
 
 
 def _model_name() -> str:
@@ -75,7 +84,7 @@ def _warm_up() -> None:
     if folders:
         # Run one complete ground-truth-free prediction to warm both model and graph code.
         components, _ = _components_with_context(folders[0])
-        predict_trip(folders[0], components, DecoderConfig())
+        predict_trip(folders[0], components, _decoder_config())
 
 
 logger = logging.getLogger("pathsnap.api")
@@ -105,7 +114,10 @@ app.add_middleware(
 @app.on_event("startup")
 def startup():
     _validate_evaluator_partition()
+    config = _decoder_config()
+    logger.info("Starting PathSnap API: model=%s decoder_config=%s", _model_name(), config)
     _warm_up()
+    logger.info("PathSnap API startup warmup completed")
 
 
 class PredictRequest(BaseModel):
@@ -211,6 +223,7 @@ def _candidate_confidences(arc_ids, candidate_sets, probabilities):
 def health():
     try:
         _validate_evaluator_partition()
+        _decoder_config()
         load_model()
         root, partition = _trip_root()
         available = len(_trip_directories(root))
@@ -248,7 +261,7 @@ def predict(request: PredictRequest):
     try:
         # All prediction callbacks use pipeline.py; route labels are read only below.
         components, state = _components_with_context(directory)
-        prediction = predict_trip(directory, components, DecoderConfig())
+        prediction = predict_trip(directory, components, _decoder_config())
         score_start = time.perf_counter()
         raw_metrics = score_after_prediction(directory, prediction, state) if (directory / f"{request.trip_id}.route").is_file() else None
         score_seconds = time.perf_counter() - score_start
@@ -299,11 +312,13 @@ def predict(request: PredictRequest):
             clf = metrics_out["classifier_only"]["top1_accuracy"]
             hmm = metrics_out["hmm"]["top1_accuracy"]
             continuity = metrics_out["hmm"]["route_continuity"]
-            logger.info("[%s] POST /predict trip_id=%s | obs=%d | clf_top1=%s | hmm_top1=%s | continuity=%s | total=%.2fs",
+            breaks = metrics_out["hmm"]["continuity_breaks"]
+            logger.info("[%s] POST /predict trip_id=%s | obs=%d | clf_top1=%s | hmm_top1=%s | continuity=%s | breaks=%s | total=%.2fs",
                         now, request.trip_id, len(observations),
                         f"{clf:.1%}" if clf is not None else "n/a",
                         f"{hmm:.1%}" if hmm is not None else "n/a",
-                        f"{continuity:.1%}" if continuity is not None else "n/a", timings["total"])
+                        f"{continuity:.1%}" if continuity is not None else "n/a",
+                        breaks if breaks is not None else "n/a", timings["total"])
         else:
             logger.info("[%s] POST /predict trip_id=%s | obs=%d | metrics=n/a | total=%.2fs",
                         now, request.trip_id, len(observations), timings["total"])

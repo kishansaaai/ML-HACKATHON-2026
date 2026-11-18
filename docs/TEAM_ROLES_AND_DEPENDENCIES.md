@@ -1,34 +1,34 @@
 # Team roles, completion status and handoffs
 
-This records the project plan against the supplied A/B branches and the current local integration. It does not imply A/B/D have reviewed or accepted these changes.
+This records the role split and handoffs against the current repository snapshot. Presence in the repository does not imply another teammate has reviewed or accepted a component.
 
 ## Roles
 
 | Person | Ownership | Current status / dependency |
 | --- | --- | --- |
-| A — ML lead | Candidates, features, route-to-track labels, heavy models, Bayesian tuning and artifact export | Branch `a/ml-pipeline` supplied the candidate/model contract and research results. Its feature code and a compatible model artifact are integrated locally. Need A to review the adapter and provenance before merge. |
-| B — decoder lead | Projection, graph search, HMM/Viterbi, metrics, stitching and `predict_trip` | Branch `feature/person-b-decoder` decoder source is under `src/pathsnap/decoder`. C implemented an adapter. Need B to review coordinate-origin treatment, performance, and evaluator behavior. |
-| C — data and integration | Inventory, EDA/maps, simple models, plots, API/scoring/logs, network setup, integration checks, report and README | Core code and analysis are present. All-ten end-to-end API check and two-laptop network rehearsal are not verified in this restricted environment. |
-| D — UI and demo | UI, screenshots, UI report section and demo checklist | Still required from D. The UI is not present in this checkout. |
+| A — ML lead | Candidates, features, route-to-track labels, heavy models, Bayesian tuning and artifact export | A's feature/model pipeline, model artifacts and experiment evidence are present in the integrated tree. A teammate review of the adapter and artifact provenance is still useful before final submission. |
+| B — decoder lead | Projection, graph search, HMM/Viterbi, metrics, stitching and `predict_trip` | Decoder source and frozen tuning outputs are present. The measured frozen-setting `student_test` check is in `results/hmm_tuning/final_student_test_check.json`. |
+| C — data and integration | Inventory, EDA/maps, simple models, plots, API/scoring/logs, network setup, integration checks, report and README | C's source and supporting result files are in this branch and `origin/main`. The latest API end-to-end run and real two-laptop rehearsal still need fresh verification. |
+| D — UI and demo | UI, screenshots, UI report section and demo checklist | UI source, API contract and demo instructions are present under `ui/` and `docs/`. Real UI and Laptop 1 receiving-terminal screenshots are still required. |
 
 ## C work completed locally
 
 - Shared trip loader follows A's `Trip` contract and keeps labels opt-in.
 - Inventory, quality findings, generated plots and an interactive Folium map are included.
 - Logistic Regression, Gaussian NB, and KNN use the same trip-grouped folds as A's model comparison. KNN fit is explicitly capped at a deterministic 3,000 training rows per fold for runtime.
-- A's feature/model pipeline and B's decoder are integrated under `src/pathsnap`; `src/pathsnap/adapters.py` bridges candidate/features/probabilities and B's graph contract.
+- A's feature/model pipeline and B's decoder are integrated under `src/pathsnap`; `src/pathsnap/pipeline.py` bridges candidate/features/probabilities and the decoder graph contract.
 - Exported LightGBM artifact and model card are present. Selection used trip-grouped CV, not `student_test`.
 - FastAPI `/health`, `/trips`, `/predict` plus after-prediction scoring and logging are implemented. The response excludes the reference route.
 - README and a technical report draft are supplied. AI assistance is disclosed.
 
 ## Cross-person dependencies and remaining work
 
-1. **A review:** confirm feature order and candidate configuration match training, and review the A `TripGraph` feature adapter. `artifacts/model.joblib` was reconstructed locally from A's training code because the branch's binary artifact was unavailable via the repository connector; it must be checked against A's own exported artifact before a final merge.
-2. **B review:** confirm B's projection and candidate geometry contract and inspect the adapter's conversion. The adapter creates A's feature graph using B's origin; this is the explicit compatibility bridge. Confirm its numerical behavior on known trips.
-3. **B performance check:** all 10 `student_test` predictions and scoring calls passed through the API handler in-process; the separate no-`.route` test also passed. This validates the handler path, not HTTP/TCP or remote-client behavior, because local sockets are restricted here. Trip `00000056` took 44.5 seconds inside inference, above the plan's 30-second target; optimize/profile this with B.
-4. **D handoff:** implement the thin UI against `/trips` and `/predict`, add UI/API-console screenshots, report section 7 and demo checklist. C's API fields are in `src/pathsnap/api.py` and documented in README.
-5. **Team/demo handoff:** run the server on Laptop 1 and UI on Laptop 2, set API URL/CORS/firewall as needed, and test all ten development trips end to end. The evaluator dataset must remain separate until the final session.
-6. **Repository handoff:** reconcile this local work with the A/B branches and the team's target branch; nothing has been pushed or merged.
+1. **A integration review:** verify feature order, candidate configuration and model artifact provenance against A's training/export path. This is a review dependency, not a claim that the model is missing.
+2. **B integration review:** review coordinate handling and the C-to-decoder adapter, and confirm the API loads the frozen decoder configuration from `configs/decoder_best.json`.
+3. **C verification:** rerun `scripts/evaluate_api.py` and the tests after dependency setup. The committed `results/api_student_test.csv` predates the latest tuned decoder check and must not be presented as current API timing evidence.
+4. **D/team evidence:** capture real screenshots of the working UI and successful HTTP responses on Laptop 1, then add them to the report. No screenshots should be recreated or faked.
+5. **Two-laptop rehearsal:** connect the UI laptop to the backend laptop, confirm all ten development trips work, and verify evaluator partition startup fails loudly unless exactly ten valid trip folders are configured.
+6. **Final submission:** ensure the public repository source matches the demonstrated implementation and the single consolidated PDF covers every required section in `Deliverables.pdf`.
 
 ## Ground-truth separation
 

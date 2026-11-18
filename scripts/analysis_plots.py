@@ -63,13 +63,15 @@ def label_quality() -> None:
 
 
 def model_comparison() -> None:
-    d = pd.read_csv(RESULTS_DIR / "experiments.csv").drop_duplicates("model", keep="last")
-    d = d[d.model != "lightgbm_tuned"].set_index("model")
-    order = ["nearest_arc", "nearest_heading_aware", "extra_trees", "random_forest", "xgboost", "hist_gb", "lightgbm"]
+    d = pd.read_csv(RESULTS_DIR / "experiments.csv").drop_duplicates("model", keep="last").set_index("model")
+    # Include every trained learner, the tuned LightGBM variant, and both reference baselines.
+    order = ["nearest_arc", "nearest_heading_aware", "logistic_regression", "gaussian_nb", "knn",
+             "extra_trees", "random_forest", "xgboost", "hist_gb", "lightgbm", "lightgbm_tuned"]
     d = d.loc[[m for m in order if m in d.index]]
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
     x = np.arange(len(d))
-    axes[0].bar(x - 0.2, d.cv_top1_mean * 100, 0.4, yerr=d.cv_top1_std * 100, label="CV (80 trips)", capsize=3)
+    axes[0].bar(x - 0.2, d.cv_top1_mean * 100, 0.4,
+                yerr=d.cv_top1_std.fillna(0) * 100, label="CV (80 trips)", capsize=3)
     axes[0].bar(x + 0.2, d.test_top1 * 100, 0.4, label="student_test")
     axes[0].set_ylabel("observation Top-1 (%)")
     axes[0].set_ylim(40, 95)
@@ -79,17 +81,18 @@ def model_comparison() -> None:
     axes[1].bar(xm - 0.2, m.cv_macro_f1_mean, 0.4, label="CV")
     axes[1].bar(xm + 0.2, m.test_macro_f1, 0.4, label="student_test")
     axes[1].set_ylabel("candidate macro F1")
-    axes[1].set_ylim(0.85, 0.96)
+    axes[1].set_ylim(0, 1)
     axes[1].set_xticks(xm)
     axes[1].set_xticklabels(m.index, rotation=30, ha="right")
     axes[1].legend()
     axes[2].bar(xm, m.test_logloss)
     axes[2].set_ylabel("log loss, student_test")
+    axes[2].set_ylim(0, max(1.05, float(m.test_logloss.max()) * 1.1))
     axes[2].set_xticks(xm)
     axes[2].set_xticklabels(m.index, rotation=30, ha="right")
     axes[0].set_xticks(x)
     axes[0].set_xticklabels(d.index, rotation=30, ha="right")
-    fig.suptitle("Model comparison (error bars: std over 5 trip-grouped folds)")
+    fig.suptitle("All learned models and reference baselines (error bars: 5-fold trip-grouped CV std)")
     fig.tight_layout()
     fig.savefig(PLOTS / "model_comparison.png", dpi=150)
     plt.close(fig)

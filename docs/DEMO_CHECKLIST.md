@@ -34,7 +34,7 @@ Use this checklist before and during the live final evaluation.
    uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000
    ```
 3. Confirm startup logs show:
-   - Trained LightGBM model (matching `artifacts/model_card.json`), feature order, and HMM configuration loaded cleanly
+   - Trained model and frozen HMM configuration loaded cleanly; startup prints the display model name and loaded decoder settings
    - All 10 reserved evaluator trips detected
 
 ### Step 2 — Verify Reachability from Laptop 2 (Person D)

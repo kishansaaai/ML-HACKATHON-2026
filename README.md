@@ -9,13 +9,13 @@ decoder turns those scores into one connected route.
 | Part | Status |
 | --- | --- |
 | Candidate generation, labels, 27 features | done (`src/pathsnap/`) |
-| Model comparison (5 models + baseline), Bayesian tuning, export | done (`scripts/`, `results/`, `artifacts/`) |
+| Model comparison (9 learned model runs + 2 reference baselines), Bayesian tuning, export | done (`scripts/`, `results/`, `artifacts/`) |
 | HMM / Viterbi decoder | done; parameters tuned on out-of-fold training trips and frozen (`src/pathsnap/decoder/`, `configs/decoder_best.json`, `results/hmm_tuning/`) |
 | End-to-end `predict(trip_dir)` | done (`src/pathsnap/pipeline.py`) |
 | FastAPI backend (`/health`, `/trips`, `/predict`), server-side scoring | done (`src/pathsnap/api.py`, `scoring.py`) |
 | Evaluator UI (Streamlit + Folium) | done (`ui/`) |
 | EDA, data inventory, simple models (LogReg, NB, KNN) | done (`scripts/`, `reports/`, `results/`) |
-| Technical report (PDF) | generated draft; team-written discussion and deployment screenshots still to do |
+| Technical report (PDF) | consolidated draft follows Deliverables.pdf sections 2.2-7; team review and real deployment screenshots remain |
 | Two-laptop run on the evaluator trips | to do at the demo |
 
 ## Repository layout

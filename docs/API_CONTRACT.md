@@ -22,7 +22,8 @@ This contract defines the HTTP endpoints and JSON payloads between **Laptop 1 (F
 
 Checks that the backend, trained model (plain LightGBM; no feature preprocessing transform), and HMM configuration are loaded.
 
-- `model_name` must be read from `artifacts/model_card.json` (key `"model"`), e.g. `"lightgbm"`.
+- `model_name` must be derived from `artifacts/model_card.json` (key `"model"`). The backend returns a readable display name such as `"LightGBM (exported)"` for the stored value `"lightgbm"`.
+- The frozen decoder settings are loaded from `configs/decoder_best.json` at startup. Startup must fail if the file is missing or invalid.
 - `partition` identifies the active server-side trip directory (e.g. `"evaluator_test"` during final evaluation). The UI shows a red warning banner if `model_name` contains `"MOCK"` (case-insensitive) or if `partition` is not the evaluator partition.
 
 ### Response `200 OK`

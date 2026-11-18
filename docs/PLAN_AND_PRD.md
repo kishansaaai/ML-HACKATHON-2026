@@ -146,6 +146,8 @@ Bayesian search (Optuna TPE or scikit-optimize) tunes the winner, objective = me
 
 ### 2.5 Acceptance criteria
 
+**The final PDF structure is governed by `Deliverables.pdf` (mandatory event guidance), not by this planning document.** Submit one consolidated PDF containing sections 2.2, 3.1, 3.2, 3.3, 4, 5, 6 and 7. Section 3.2 must answer the required questions for every trained model; Section 3.3 must compare all learned models using actual outputs; Section 4 must compare tuned/untuned results on identical partitions; Section 6 must show the real Folium map layers; Section 7 must include real working-UI and receiving-laptop API screenshots. The repository must retain source, artifacts/configs, experiment evidence, installation/run/deployment instructions and no secrets. See `docs/REPORT_EVIDENCE_MAP.md` for the source-to-report checklist. AI tools must not substitute for the team's own analysis or fabricate evidence; the team must review and be able to defend every explanation and result.
+
 - [ ] 5 or more models trained, logged with seeds, configs, CV and `student_test` scores
 - [ ] Bayesian trial log saved; tuned vs untuned compared on identical metrics and partitions
 - [ ] HMM vs classifier-only table, with at least one case where HMM does not help explained

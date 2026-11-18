@@ -94,7 +94,9 @@ POST /predict {"trip_id": "00000052"}  -> HTTP 200 (summary of the response)
 }
 ```
 
-Console output of the API process on the receiving laptop (one line per `POST /predict`, also written to `logs/api.log`):
+![Figure 10. Screenshot of the CMD console of the API process on the receiving laptop (Laptop 1) while it serves student_test requests: server start-up, `GET /health`, `GET /trips` and one log line per `POST /predict` with trip, observation count, classifier and HMM Top-1, continuity and total time.](docs/report/fig/api_cmd_console.png)
+
+The same log lines as text (also written to `logs/api.log`):
 
 ```
 [2026-11-18T15:43:39Z] POST /predict trip_id=00000000 | obs=2503 | clf_top1=95.3% | hmm_top1=95.6% | continuity=99.2% | total=3.87s

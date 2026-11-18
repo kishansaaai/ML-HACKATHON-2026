@@ -1,0 +1,14 @@
+{
+  "train": {
+    "trips": 80,
+    "track_rows": 208417,
+    "nodes": 1933485,
+    "arcs": 3876904
+  },
+  "student_test": {
+    "trips": 10,
+    "track_rows": 19160,
+    "nodes": 90689,
+    "arcs": 185041
+  }
+}

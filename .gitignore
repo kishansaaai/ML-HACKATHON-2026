@@ -1,8 +1,19 @@
-.venv/
-.uv-cache/
+# Python generated files
 __pycache__/
 *.py[cod]
-data_cache/
+*.egg-info/
 .pytest_cache/
+.venv/
+.uv-cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# generated tables, caches and runtime output (rebuilt by scripts / created when running)
+data_cache/
+outputs/
 logs/
 tmp/
+
+# evaluator data must never be committed
+eval_data/
+evaluator*/

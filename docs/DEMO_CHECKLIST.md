@@ -6,9 +6,10 @@ Use this checklist before and during the live final evaluation.
 
 ## 0. First Step Before Starting the Evaluation
 
-- [ ] **Confirm the banner shows the real model name (not MOCK) before the evaluator starts.**
-  - The top banner on Laptop 2 must be **green**, showing the real `model_name` from `artifacts/model_card.json` (e.g. `lightgbm`) and the evaluator partition.
-  - If the red **`DEV MOCK BACKEND - NOT FOR FINAL EVALUATION`** banner is visible, stop immediately and point Laptop 2 at Laptop 1's real FastAPI server running on the evaluator partition.
+- [ ] **Confirm the UI is talking to the real backend on the evaluator partition.**
+  - The top of the page on Laptop 2 shows `Model LightGBM (exported)` (the name comes from `artifacts/model_card.json`).
+  - The sidebar shows `Partition: evaluator` (it shows `student_test` while rehearsing).
+  - If the page shows `Backend unreachable`, or the partition is not the evaluator one at the real run, stop and fix Laptop 1 first.
 
 ---
 
@@ -29,7 +30,8 @@ Use this checklist before and during the live final evaluation.
 1. Open a visible Command Prompt / PowerShell window on **Laptop 1** (keep it maximized or side-by-side so the evaluator can watch live logs).
 2. Run the production FastAPI server bound to `0.0.0.0`:
    ```powershell
-   uvicorn api.main:app --host 0.0.0.0 --port 8000
+   set PATHSNAP_EVALUATOR_DIR=<folder with the 10 evaluator trips>   (omit while rehearsing on student_test)
+   uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000
    ```
 3. Confirm startup logs show:
    - Trained LightGBM model (matching `artifacts/model_card.json`), feature order, and HMM configuration loaded cleanly
@@ -40,7 +42,7 @@ Use this checklist before and during the live final evaluation.
    ```text
    http://<LAPTOP_1_IP>:8000/health
    ```
-2. Confirm HTTP `200 OK` with `"model_loaded": true`, real `model_name` (not MOCK), evaluator `partition`, and `"trips_available": 10`.
+2. Confirm HTTP `200 OK` with `"model_loaded": true`, real `model_name`, the right `partition`, and `"trips_available": 10`.
 
 ### Step 3 — Start Evaluator UI on Laptop 2 (Person D)
 1. Run the launcher pointing at Laptop 1:
@@ -49,14 +51,14 @@ Use this checklist before and during the live final evaluation.
    run_ui.bat http://<LAPTOP_1_IP>:8000
    ```
 2. Confirm the browser opens `http://localhost:8501` and displays:
-   - **Green backend banner** in the page header with the real `model_name` and evaluator `partition` (not the red MOCK banner)
-   - All **10 evaluation trip cards** loaded dynamically from `GET /trips`
+   - The real model name at the top and the partition in the sidebar
+   - All **10 evaluation trips** in the trip dropdown, loaded dynamically from `GET /trips`
 
 ---
 
 ## 3. Rehearsal Verification (Using `student_test` Before Final Eval)
 
-- [ ] Run **all 10 `student_test` trips** end-to-end from Laptop 2 → Laptop 1. (Note: on `student_test`, the red non-evaluator safety banner is expected until Laptop 1 is switched to the evaluator partition.)
+- [ ] Run **all 10 `student_test` trips** end-to-end from Laptop 2 → Laptop 1. (On `student_test` the sidebar partition reads `student_test` until Laptop 1 is switched to the evaluator folder.)
 - [ ] Verify every trip finishes cleanly (no timeout, no 500 error) and renders:
   - Raw GPS observations (blue dots)
   - HMM / Viterbi predicted route drawn as separate polylines across breaks (`hmm_route_segments`) with route-break count shown next to the map
@@ -64,20 +66,20 @@ Use this checklist before and during the live final evaluation.
   - Classifier-only vs. HMM comparison metrics & stage timings returned by the API
   - No skipped-coordinate warnings (confirming `[lon, lat]` → `[lat, lon]` conversion is working)
 - [ ] Verify Laptop 1 console prints a fresh log entry for every single `POST /predict` request.
-- [ ] Verify **zero `.route` data** appears in the UI or in the `Inspect Returned Observations & API JSON` expander.
+- [ ] Verify **zero `.route` data** appears in the UI or in the **Observations** and **API response** tabs.
 - [ ] Test error handling once: temporarily stop Laptop 1 or enter a wrong IP and confirm Laptop 2 shows a clean, readable error box (not a raw Python traceback).
 
 ---
 
 ## 4. Live Evaluator Walkthrough Script
 
-1. **Confirm & show the green header banner on Laptop 2:** Point out the real `model_name` and evaluator `partition`, Laptop 1's IP in the sidebar, and the 10 evaluation trip cards loaded via `GET /trips`.
-2. **Let the evaluator pick ANY trip:** Click the evaluator's chosen trip card and press **Run Map-Matching**.
+1. **Show the header on Laptop 2:** point out the real model name, the evaluator partition and Laptop 1's address in the sidebar, and the 10 trips in the dropdown loaded via `GET /trips`.
+2. **Let the evaluator pick ANY trip:** Select the evaluator's chosen trip in the dropdown and press **Match route**.
 3. **Show Laptop 1 (CMD/Console):** Immediately point to the Laptop 1 terminal receiving `POST /predict` with `trip_id`, running the pipeline live, and printing stage timings and server-scored metrics.
 4. **Inspect the returned result on Laptop 2:**
    - Review the **Classifier-Only vs. Classifier + HMM** metrics and route-break count displayed beside the map.
    - Zoom into the Folium map and toggle **Classifier-Only Predictions** vs. **HMM / Viterbi Predicted Route** to compare both layers visually.
-   - (Optional) Open the **Inspect Returned Observations & API JSON** expander to show that ground-truth `.route` labels are never sent to Laptop 2.
+   - (Optional) Open the **Observations** and **API response** tabs to show that ground-truth `.route` labels are never sent to Laptop 2.
 5. **Offer to run additional trips** chosen freely by the evaluator to confirm all 10 trips run live.
 
 ---
@@ -85,7 +87,7 @@ Use this checklist before and during the live final evaluation.
 ## 5. Screenshots to Capture for Report Section 7
 
 Capture and save in `docs/screenshots/` for the consolidated PDF report (using the real backend, not `mock_api.py`):
-1. `ui_trip_selector.png` — Laptop 2 UI showing the green backend status banner, sidebar connection info, and the 10 dynamically loaded evaluation trip cards.
-2. `ui_route_map_and_metrics.png` — Completed prediction showing KPI metrics, Classifier vs. HMM comparison table, route-break count, and interactive Folium map.
+1. `ui_trip_selector.png` — Laptop 2 UI showing the model name, the sidebar connection info and partition, and the trip dropdown with the 10 evaluation trips.
+2. `ui_route_map_and_metrics.png` — Completed prediction showing KPI metrics, the Classifier vs HMM tab, route-break count, and interactive Folium map.
 3. `ui_layer_comparison.png` — Zoomed-in Folium view comparing Raw GPS, Classifier-Only (dashed orange), and HMM Predicted Route (green).
 4. `laptop1_api_cmd_logs.png` — Laptop 1 CMD/PowerShell terminal showing live `GET /health`, `GET /trips`, and `POST /predict` logs with HTTP `200 OK` responses and timings (supplied with Person C).

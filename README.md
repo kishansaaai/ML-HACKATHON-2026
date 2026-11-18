@@ -12,9 +12,11 @@ decoder turns those scores into one connected route.
 | Model comparison (5 models + baseline), Bayesian tuning, export | done (`scripts/`, `results/`, `artifacts/`) |
 | HMM / Viterbi decoder | implemented, settings **not yet tuned** (`src/pathsnap/decoder/`) |
 | End-to-end `predict(trip_dir)` | done (`src/pathsnap/pipeline.py`) |
-| FastAPI backend, Folium maps and EDA | integrated locally on `feature/data-api-integration-v2` |
-| Evaluator UI | see Person D branch `person-d/ui`; integration still required |
-| Technical report (PDF) | generated draft; team-authored per-model discussion and demo screenshots remain |
+| FastAPI backend (`/health`, `/trips`, `/predict`), server-side scoring | done (`src/pathsnap/api.py`, `scoring.py`) |
+| Evaluator UI (Streamlit + Folium) | done (`ui/`) |
+| EDA, data inventory, simple models (LogReg, NB, KNN) | done (`scripts/`, `reports/`, `results/`) |
+| Technical report (PDF) | generated draft; team-written discussion and deployment screenshots still to do |
+| Two-laptop run on the evaluator trips | to do at the demo |
 
 ## Repository layout
 
@@ -25,6 +27,7 @@ scripts/             runnable steps (data tables, folds, training, tuning, ablat
 configs/             cv_folds.json (5 trip-grouped folds, seed 42)
 artifacts/           exported model: model.joblib, feature_order.json, model_card.json
 results/             experiment logs and result tables (CSV/JSON), plots/
+ui/                  evaluator UI for Laptop 2 (Streamlit): app.py, api_client.py, map_renderer.py, launchers
 tests/               pytest suite
 docs/                plan/PRD, notes per component (docs/notes/), decoder notes
 Student folder/      provided dataset: train (80 trips) and student_test (10 trips)
@@ -101,7 +104,7 @@ uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000
 
 On Windows, `scripts\\run_api.cmd` starts the service using `.venv`. The service defaults to the 10-trip `student_test` partition. Set `PATHSNAP_EVALUATOR_DIR` to the evaluator trip folder before launch to serve evaluator data; startup fails unless that directory contains exactly 10 valid trip folders. It never silently falls back to development data. Optional `PATHSNAP_CORS_ORIGINS` configures UI origins and `PATHSNAP_LOG_FILE` changes the log path.
 
-API endpoints match [Person D's current API contract](https://github.com/kishansaaai/ML-HACKATHON-2026/blob/person-d/ui/docs/API_CONTRACT.md): `/health`, `/trips`, and `/predict`. `/predict` accepts only a trip ID, returns predicted map layers/metrics, and never exposes ground truth. Scoring opens `.route` only after `pathsnap.pipeline` has finished prediction. `python scripts/evaluate_api.py` re-times the 10 development trips and checks the saved official pipeline Top-1 results. `python scripts/build_report.py` rebuilds `output/pdf/PathSnap_technical_report.pdf` from saved repository metrics.
+API endpoints match the contract in `docs/API_CONTRACT.md`: `/health`, `/trips`, and `/predict`. `/predict` accepts only a trip ID, returns predicted map layers/metrics, and never exposes ground truth. Scoring opens `.route` only after `pathsnap.pipeline` has finished prediction. `python scripts/evaluate_api.py` re-times the 10 development trips and checks the saved official pipeline Top-1 results. `python scripts/build_report.py` rebuilds `output/pdf/PathSnap_technical_report.pdf` from saved repository metrics.
 
 ## Tests
 
@@ -116,10 +119,32 @@ python -m pytest tests
 - Ground-truth labels stay server-side and are never exposed to the model or the UI.
 - Every number in the report must come from a script and a file in this repository.
 
-## Deployment (to be completed with the API and UI)
+## Deployment: two laptops
 
 Laptop 1 runs the API (classifier, decoder, road data, server-side scoring); Laptop 2 runs the UI.
-Run instructions and the API endpoint list will be added here when the backend and UI are committed.
+Both must be on the same Wi-Fi or hotspot. The 10 evaluator trips stay on Laptop 1 only.
+
+**Laptop 1** (from the repository root; keep this window visible, it prints one log line per request):
+
+```
+pip install -r requirements.txt
+pip install -e .
+set PATHSNAP_EVALUATOR_DIR=D:\path\to\evaluator_trips      (omit to serve the 10 student_test trips)
+uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000
+```
+
+Allow inbound TCP 8000 in the firewall, then check `http://<laptop1-ip>:8000/health` from Laptop 2.
+
+**Laptop 2:**
+
+```
+pip install -r ui/requirements.txt
+cd ui
+run_ui.bat http://<laptop1-ip>:8000          (macOS/Linux: ./run_ui.sh http://<laptop1-ip>:8000)
+```
+
+The browser opens `http://localhost:8501`. Choose a trip, press **Match route**. The model name is shown at the
+top and the partition in the sidebar. Rehearsal and demo steps: `docs/DEMO_CHECKLIST.md`.
 
 ## AI assistance
 

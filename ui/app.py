@@ -35,49 +35,33 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .block-container { padding-top: 1.5rem; padding-bottom: 2rem; }
-    .status-pill {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 0.82rem;
-        font-weight: 600;
-    }
-    .status-ok { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-    .status-err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-    .backend-banner {
-        padding: 12px 16px;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
-        line-height: 1.4;
-    }
-    .backend-banner-red {
-        background: #dc2626;
-        color: #ffffff;
-        border: 2px solid #991b1b;
-    }
-    .backend-banner-green {
-        background: #dcfce7;
-        color: #14532d;
-        border: 1px solid #86efac;
-    }
-    .trip-meta {
-        font-size: 0.78rem;
-        color: #64748b;
-        margin-top: -6px;
-        margin-bottom: 6px;
-    }
-    .map-break-badge {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 8px;
-        background: #f8fafc;
-        border: 1px solid #cbd5e1;
-        color: #0f172a;
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
+    :root { --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --brand:#0f766e; --bg-soft:#f8fafc; }
+    [data-testid="stToolbar"], [data-testid="stDecoration"], footer { display: none !important; }
+    .block-container { max-width: 1180px; padding-top: 3.6rem; padding-bottom: 3rem; }
+    [data-testid="stHeader"] { background: transparent; }
+    html, body, [class*="css"] { font-family: "Inter", "Segoe UI", system-ui, sans-serif; }
+    h1 { font-size: 1.7rem !important; font-weight: 700 !important; letter-spacing: -0.02em; margin: 0 !important; padding: 0 !important; }
+    h2, h3 { font-weight: 650 !important; letter-spacing: -0.01em; }
+    [data-testid="stSidebar"] { background: var(--bg-soft); border-right: 1px solid var(--line); }
+    [data-testid="stSidebar"] h2 { font-size: 1rem !important; }
+    .app-sub { color: var(--muted); font-size: 0.9rem; margin: 2px 0 14px 0; }
+    .status-pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:600; }
+    .status-ok { background:#dcfce7; color:#166534; }
+    .status-err { background:#fee2e2; color:#991b1b; }
+    .backend-banner { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;
+        padding:8px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem; }
+    .backend-banner code { background: rgba(255,255,255,0.22); padding:1px 6px; border-radius:4px; color:inherit; }
+    .backend-banner-red { background:#b91c1c; color:#fff; }
+    .backend-banner-green { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+    .backend-banner-green code { background:#d1fae5; }
+    .chip { display:inline-block; background:var(--bg-soft); border:1px solid var(--line); color:var(--ink);
+        padding:3px 10px; border-radius:999px; font-size:0.8rem; margin:0 6px 0 0; }
+    .section-label { color:var(--muted); font-size:0.75rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; margin:18px 0 6px 0; }
+    [data-testid="stMetric"] { padding: 2px 4px; }
+    [data-testid="stMetricLabel"] p { color: var(--muted); font-size: 0.8rem; }
+    [data-testid="stMetricValue"] { font-size: 1.75rem; font-weight: 700; }
+    .stButton > button[kind="primary"] { background: var(--brand); border-color: var(--brand); font-weight: 600; }
+    .stButton > button[kind="primary"]:hover { background:#115e59; border-color:#115e59; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -160,7 +144,7 @@ def _refresh_backend(api_url: str) -> None:
 
 
 def _render_backend_header_banner() -> None:
-    """Always display model_name and partition in the page header with mock-safety banner."""
+    """One slim line: model and partition are always visible; red unless a real evaluator backend."""
     health = st.session_state["health_info"]
     health_err = st.session_state["health_error"]
     fallback_partition = st.session_state.get("partition")
@@ -168,287 +152,228 @@ def _render_backend_header_banner() -> None:
     if health is None:
         if health_err:
             st.markdown(
-                '<div class="backend-banner backend-banner-red">'
-                "<strong>BACKEND UNREACHABLE</strong> — Cannot verify model_name or partition via <code>GET /health</code>."
-                "</div>",
+                '<div class="backend-banner backend-banner-red"><strong>Backend unreachable</strong>'
+                "<span>Cannot verify model or partition via <code>GET /health</code>.</span></div>",
                 unsafe_allow_html=True,
             )
         return
 
-    model_name = str(health.get("model_name") or "unknown")
-    partition = str(health.get("partition") or fallback_partition or "unknown")
-    safe_model = html.escape(model_name)
-    safe_partition = html.escape(partition)
-
+    safe_model = html.escape(str(health.get("model_name") or "unknown"))
+    safe_partition = html.escape(str(health.get("partition") or fallback_partition or "unknown"))
     if _is_mock_or_non_evaluator(health, fallback_partition):
         st.markdown(
-            f'<div class="backend-banner backend-banner-red">'
-            f'<div style="font-size:1.05rem;font-weight:800;letter-spacing:0.3px;">'
-            f"⚠️ DEV MOCK BACKEND - NOT FOR FINAL EVALUATION"
-            f"</div>"
-            f'<div style="margin-top:4px;font-size:0.88rem;">'
-            f"Backend model: <code>{safe_model}</code> &nbsp;|&nbsp; Active partition: <code>{safe_partition}</code>"
-            f"</div>"
-            f"</div>",
+            f'<div class="backend-banner backend-banner-red"><strong>Development data, not the final evaluation</strong>'
+            f"<span>Model <code>{safe_model}</code></span><span>Partition <code>{safe_partition}</code></span></div>",
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            f'<div class="backend-banner backend-banner-green">'
-            f"<strong>✅ Real Backend Connected</strong> &nbsp;|&nbsp; "
-            f"Model: <code>{safe_model}</code> &nbsp;|&nbsp; "
-            f"Partition: <code>{safe_partition}</code>"
-            f"</div>",
+            f'<div class="backend-banner backend-banner-green"><strong>Evaluation backend connected</strong>'
+            f"<span>Model <code>{safe_model}</code></span><span>Partition <code>{safe_partition}</code></span></div>",
             unsafe_allow_html=True,
         )
 
 
 def _render_sidebar() -> str:
     with st.sidebar:
-        st.header("Laptop 1 API Config")
+        st.markdown("## Connection")
         api_url = st.text_input(
-            "API Base URL",
+            "API address",
             value=st.session_state["api_base_url"],
-            help="Set to Laptop 1's LAN URL during evaluation, e.g. http://192.168.1.25:8000",
+            help="Laptop 1's LAN address during the evaluation, e.g. http://192.168.1.25:8000",
         ).strip()
         if api_url != st.session_state["api_base_url"]:
             st.session_state["api_base_url"] = api_url
 
-        if st.button("Check Connection & Reload Trips", use_container_width=True):
+        if st.button("Check connection", use_container_width=True):
             _refresh_backend(api_url)
 
-        st.divider()
-        st.subheader("Backend Status")
         health = st.session_state["health_info"]
         health_err = st.session_state["health_error"]
-
         if health:
             st.markdown('<span class="status-pill status-ok">● Connected</span>', unsafe_allow_html=True)
-            st.caption(f"Latency: {health.get('_latency_ms', '?')} ms")
-            st.write(f"**Model:** `{health.get('model_name', 'Unknown')}`")
-            st.write(f"**Version:** `{health.get('version', 'N/A')}`")
-            st.write(f"**Partition:** `{health.get('partition', st.session_state.get('partition', 'N/A'))}`")
+            st.caption(
+                f"{health.get('_latency_ms', '?')} ms · "
+                f"{health.get('model_name', 'unknown model')} · v{health.get('version', 'n/a')}"
+            )
             if not health.get("model_loaded", True):
-                st.warning("API is reachable, but `model_loaded` is False.")
+                st.warning("API is reachable, but the model is not loaded.")
         elif health_err:
             st.markdown('<span class="status-pill status-err">● Unreachable</span>', unsafe_allow_html=True)
             st.error(health_err)
         else:
-            st.info("Click **Check Connection** to ping Laptop 1.")
+            st.caption("Press **Check connection** to contact Laptop 1.")
 
-        st.divider()
-        st.caption(
-            "**Two-Laptop Architecture**\n\n"
-            "- **Laptop 2 (this UI):** Displays trips, sends `trip_id`, renders map & metrics.\n"
-            "- **Laptop 1 (FastAPI):** Runs classifier + HMM/Viterbi and server-side scoring. "
-            "Ground truth never leaves Laptop 1."
-        )
+        with st.expander("How this works"):
+            st.caption(
+                "**Laptop 2 (this screen)** sends a trip id and draws the answer. "
+                "**Laptop 1 (API)** runs the classifier and HMM, and scores the result against the "
+                "reference route, which never leaves Laptop 1."
+            )
     return api_url
 
 
-def _render_trip_cards(trips: list[TripSummary]) -> None:
-    partition = st.session_state.get("partition") or "evaluation"
-    st.subheader(f"Evaluation Trips ({len(trips)} available — `{partition}`)")
-    st.caption("Select any trip below, then click **Run Map-Matching** to send a live request to Laptop 1.")
-
-    cols_per_row = 5
-    for row_start in range(0, len(trips), cols_per_row):
-        row_trips = trips[row_start : row_start + cols_per_row]
-        cols = st.columns(cols_per_row)
-        for col, trip in zip(cols, row_trips):
-            is_selected = st.session_state["selected_trip_id"] == trip.trip_id
-            prev_score = st.session_state["session_scores"].get(trip.trip_id)
-
-            with col:
-                with st.container(border=True):
-                    label = f"Trip {trip.trip_id}"
-                    if st.button(
-                        f"✓ {label}" if is_selected else label,
-                        key=f"select_trip_{trip.trip_id}",
-                        type="primary" if is_selected else "secondary",
-                        use_container_width=True,
-                    ):
-                        st.session_state["selected_trip_id"] = trip.trip_id
-                        st.rerun()
-
-                    meta_parts = []
-                    if trip.num_observations is not None:
-                        meta_parts.append(f"{trip.num_observations:,} GPS pts")
-                    if trip.num_arcs is not None:
-                        meta_parts.append(f"{trip.num_arcs:,} arcs")
-                    if meta_parts:
-                        st.markdown(f'<div class="trip-meta">{" · ".join(meta_parts)}</div>', unsafe_allow_html=True)
-
-                    if prev_score is not None:
-                        st.caption(f"Last HMM Top-1: **{_fmt_pct(prev_score)}**")
+def _trip_label(trip: TripSummary) -> str:
+    extra = f" · {trip.num_observations:,} GPS points" if trip.num_observations is not None else ""
+    return f"{trip.trip_id}{extra}"
 
 
-def _render_metrics_comparison(prediction: dict[str, Any]) -> None:
+def _render_trip_picker(trips: list[TripSummary]) -> bool:
+    """Trip dropdown, detail chips and the run button. Returns True when Run was pressed."""
+    ids = [t.trip_id for t in trips]
+    by_id = {t.trip_id: t for t in trips}
+    if st.session_state["selected_trip_id"] not in by_id:
+        st.session_state["selected_trip_id"] = ids[0]
+
+    st.markdown('<div class="section-label">Trip</div>', unsafe_allow_html=True)
+    pick_col, run_col = st.columns([3, 1.2], vertical_alignment="bottom")
+    with pick_col:
+        selected = st.selectbox(
+            "Trip",
+            ids,
+            index=ids.index(st.session_state["selected_trip_id"]),
+            format_func=lambda trip_id: _trip_label(by_id[trip_id]),
+            label_visibility="collapsed",
+        )
+        st.session_state["selected_trip_id"] = selected
+    with run_col:
+        run_clicked = st.button("Match route", type="primary", use_container_width=True)
+
+    trip = by_id[selected]
+    chips = []
+    if trip.num_arcs is not None:
+        chips.append(f"{trip.num_arcs:,} road arcs")
+    prev = st.session_state["session_scores"].get(selected)
+    if prev is not None:
+        chips.append(f"last HMM Top-1 {_fmt_pct(prev)}")
+    if chips:
+        st.markdown("".join(f'<span class="chip">{html.escape(c)}</span>' for c in chips), unsafe_allow_html=True)
+    return run_clicked
+
+
+def _render_kpis(prediction: dict[str, Any]) -> None:
     metrics = prediction.get("metrics") or {}
     clf = metrics.get("classifier_only") or {}
     hmm = metrics.get("hmm") or {}
     timings = prediction.get("timings_sec") or {}
 
-    k1, k2, k3, k4 = st.columns(4)
-    with k1:
-        st.metric(
-            label="HMM Observation Top-1 Accuracy",
-            value=_fmt_pct(hmm.get("top1_accuracy")),
-            delta=_fmt_delta_pct(hmm.get("top1_accuracy"), clf.get("top1_accuracy")),
-        )
-    with k2:
+    with st.container(border=True):
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Top-1 accuracy (HMM)", _fmt_pct(hmm.get("top1_accuracy")),
+                  delta=_fmt_delta_pct(hmm.get("top1_accuracy"), clf.get("top1_accuracy")))
         breaks = hmm.get("continuity_breaks")
-        breaks_suffix = f" ({breaks} breaks)" if breaks is not None else ""
-        st.metric(
-            label=f"HMM Route Continuity{breaks_suffix}",
-            value=_fmt_pct(hmm.get("route_continuity")),
-            delta=_fmt_delta_pct(hmm.get("route_continuity"), clf.get("route_continuity")),
-        )
-    with k3:
-        seq_or_f1_label = "HMM Sequence F1" if hmm.get("sequence_f1") is not None else "HMM Macro F1"
+        k2.metric("Route continuity", _fmt_pct(hmm.get("route_continuity")),
+                  delta=f"{breaks} breaks" if breaks is not None else None, delta_color="off")
         seq_key = "sequence_f1" if hmm.get("sequence_f1") is not None else "macro_f1"
-        st.metric(
-            label=seq_or_f1_label,
-            value=_fmt_pct(hmm.get(seq_key)),
-            delta=_fmt_delta_pct(hmm.get(seq_key), clf.get(seq_key)),
-        )
-    with k4:
+        k3.metric("Sequence F1" if seq_key == "sequence_f1" else "Macro F1", _fmt_pct(hmm.get(seq_key)),
+                  delta=_fmt_delta_pct(hmm.get(seq_key), clf.get(seq_key)))
         total_srv = timings.get("total")
         roundtrip = prediction.get("_client_roundtrip_sec")
-        val_str = f"{float(total_srv):.2f}s" if total_srv is not None else (
-            f"{float(roundtrip):.2f}s" if roundtrip is not None else "N/A"
-        )
-        delta_str = f"round-trip {roundtrip:.2f}s" if (total_srv is not None and roundtrip is not None) else None
-        st.metric(
-            label="Server Inference Time",
-            value=val_str,
-            delta=delta_str,
-            delta_color="off",
-        )
+        shown = total_srv if total_srv is not None else roundtrip
+        k4.metric("Server time", f"{float(shown):.2f} s" if shown is not None else "N/A",
+                  delta=f"round trip {roundtrip:.2f} s" if (total_srv is not None and roundtrip is not None) else None,
+                  delta_color="off")
+    st.caption("Deltas compare the HMM result with the classifier alone.")
 
-    left_col, right_col = st.columns([3, 2])
-    with left_col:
-        st.markdown("#### Classifier-Only vs. Classifier + HMM")
-        rows = [
-            ("Observation Top-1 Accuracy", _fmt_pct(clf.get("top1_accuracy")), _fmt_pct(hmm.get("top1_accuracy"))),
-            ("Macro F1-score", _fmt_pct(clf.get("macro_f1")), _fmt_pct(hmm.get("macro_f1"))),
-            ("Precision", _fmt_pct(clf.get("precision")), _fmt_pct(hmm.get("precision"))),
-            ("Recall", _fmt_pct(clf.get("recall")), _fmt_pct(hmm.get("recall"))),
-            ("Log Loss", _fmt_float(clf.get("log_loss")), _fmt_float(hmm.get("log_loss"))),
-            ("Route Continuity", _fmt_pct(clf.get("route_continuity")), _fmt_pct(hmm.get("route_continuity"))),
-            ("Continuity Breaks", _fmt_int(clf.get("continuity_breaks")), _fmt_int(hmm.get("continuity_breaks"))),
-            ("Sequence-Level Score (F1)", _fmt_pct(clf.get("sequence_f1")), _fmt_pct(hmm.get("sequence_f1"))),
-            ("Candidate Miss Rate", _fmt_pct(clf.get("candidate_miss_rate")), _fmt_pct(hmm.get("candidate_miss_rate"))),
-        ]
-        df_metrics = pd.DataFrame(rows, columns=["Metric", "Classifier-Only", "Classifier + HMM"])
-        st.dataframe(df_metrics, hide_index=True, use_container_width=True)
 
-    with right_col:
-        st.markdown("#### Pipeline Timings (Laptop 1)")
-        if timings:
-            stage_labels = {
-                "load_and_index": "Load & Spatial Index",
-                "candidates_and_features": "Candidates & Features",
-                "classifier_inference": "Classifier Inference",
-                "hmm_viterbi": "HMM / Viterbi Decoding",
-                "server_scoring": "Server-Side Scoring",
-                "total": "Total Server Time",
-            }
-            timing_rows = [
-                (stage_labels.get(k, k), f"{float(v):.3f} s")
-                for k, v in timings.items()
-                if v is not None
-            ]
-            df_timings = pd.DataFrame(timing_rows, columns=["Stage", "Duration"])
-            st.dataframe(df_timings, hide_index=True, use_container_width=True)
-        else:
-            st.info("No per-stage timings returned by the API.")
+def _render_comparison_tab(prediction: dict[str, Any]) -> None:
+    metrics = prediction.get("metrics") or {}
+    clf = metrics.get("classifier_only") or {}
+    hmm = metrics.get("hmm") or {}
+    rows = [
+        ("Top-1 accuracy", _fmt_pct(clf.get("top1_accuracy")), _fmt_pct(hmm.get("top1_accuracy"))),
+        ("Macro F1", _fmt_pct(clf.get("macro_f1")), _fmt_pct(hmm.get("macro_f1"))),
+        ("Precision", _fmt_pct(clf.get("precision")), _fmt_pct(hmm.get("precision"))),
+        ("Recall", _fmt_pct(clf.get("recall")), _fmt_pct(hmm.get("recall"))),
+        ("Log loss", _fmt_float(clf.get("log_loss")), _fmt_float(hmm.get("log_loss"))),
+        ("Route continuity", _fmt_pct(clf.get("route_continuity")), _fmt_pct(hmm.get("route_continuity"))),
+        ("Continuity breaks", _fmt_int(clf.get("continuity_breaks")), _fmt_int(hmm.get("continuity_breaks"))),
+        ("Sequence F1", _fmt_pct(clf.get("sequence_f1")), _fmt_pct(hmm.get("sequence_f1"))),
+        ("Candidate miss rate", _fmt_pct(clf.get("candidate_miss_rate")), _fmt_pct(hmm.get("candidate_miss_rate"))),
+    ]
+    st.dataframe(pd.DataFrame(rows, columns=["Metric", "Classifier only", "Classifier + HMM"]),
+                 hide_index=True, use_container_width=True)
 
-        st.caption(
-            f"**Trip ID:** `{prediction.get('trip_id', 'N/A')}`  \n"
-            f"**Model:** `{prediction.get('model_name', 'N/A')}`  \n"
-            f"**Observations:** {_fmt_int(prediction.get('num_observations'))}  \n"
-            f"**Server Timestamp:** `{prediction.get('server_timestamp', 'N/A')}`"
-        )
+
+def _render_timings_tab(prediction: dict[str, Any]) -> None:
+    timings = prediction.get("timings_sec") or {}
+    if not timings:
+        st.info("The API returned no per-stage timings.")
+        return
+    labels = {
+        "load_and_index": "Load and spatial index", "candidates_and_features": "Candidates and features",
+        "classifier_inference": "Classifier inference", "hmm_viterbi": "HMM / Viterbi decoding",
+        "server_scoring": "Server-side scoring", "total": "Total",
+    }
+    rows = [(labels.get(k, k), f"{float(v):.3f} s") for k, v in timings.items() if v is not None]
+    st.dataframe(pd.DataFrame(rows, columns=["Stage", "Duration"]), hide_index=True, use_container_width=True)
+    st.caption(
+        f"Trip {prediction.get('trip_id', 'N/A')} · {_fmt_int(prediction.get('num_observations'))} observations · "
+        f"server time {prediction.get('server_timestamp', 'N/A')}"
+    )
+
+
+def _render_observations_tab(prediction: dict[str, Any]) -> None:
+    obs = prediction.get("observations") or []
+    if not obs:
+        st.info("No per-observation records in this response.")
+        return
+    st.caption(f"First {min(len(obs), 100)} of {len(obs):,} observations returned by the API.")
+    st.dataframe(pd.DataFrame(obs[:100]), hide_index=True, use_container_width=True)
 
 
 def _render_results(prediction: dict[str, Any]) -> None:
     trip_id = prediction.get("trip_id", "unknown")
     hmm_metrics = (prediction.get("metrics") or {}).get("hmm") or {}
-    route_breaks = hmm_metrics.get("continuity_breaks")
 
-    st.divider()
-    st.subheader(f"Route Reconstruction Results — Trip `{trip_id}`")
-
-    _render_metrics_comparison(prediction)
+    st.markdown(f'<div class="section-label">Result · trip {html.escape(str(trip_id))}</div>', unsafe_allow_html=True)
+    _render_kpis(prediction)
 
     render_res = build_trip_map(prediction)
-
-    hdr_col, breaks_col = st.columns([3, 2])
-    with hdr_col:
-        st.markdown("#### Interactive Route Map (Folium)")
-        st.caption(
-            "Disconnected route segments are drawn separately (never joined with false lines). "
-            "Use the top-right layer selector to toggle layers."
-        )
-    with breaks_col:
-        breaks_text = _fmt_int(route_breaks)
-        seg_text = _fmt_int(render_res.hmm_segment_count)
-        st.markdown(
-            f'<div style="text-align:right;margin-top:8px;">'
-            f'<span class="map-break-badge">'
-            f"Route Breaks: {breaks_text} &nbsp;|&nbsp; Route Segments Drawn: {seg_text}"
-            f"</span></div>",
-            unsafe_allow_html=True,
-        )
-
+    st.markdown('<div class="section-label">Route map</div>', unsafe_allow_html=True)
     if render_res.skipped_points > 0:
         st.warning(
-            f"Skipped **{render_res.skipped_points}** coordinate point(s) outside valid WGS-84 bounds "
-            "(expected `[lat, lon]` with lat in `[-90, 90]` and lon in `[-180, 180]`). "
-            "Verify that the backend converts decoder `[lon, lat]` output to `[lat, lon]`."
+            f"Skipped {render_res.skipped_points} point(s) outside valid latitude/longitude range. "
+            "Check that the backend sends [lat, lon]."
         )
+    st_folium(render_res.fmap, width=None, height=560, returned_objects=[])
+    st.caption(
+        f"{_fmt_int(render_res.hmm_segment_count)} route segment(s) drawn · "
+        f"{_fmt_int(hmm_metrics.get('continuity_breaks'))} continuity breaks. "
+        "Disconnected segments are drawn separately, never joined by a false line. "
+        "Use the layer control (top right) to toggle layers."
+    )
 
-    # returned_objects=[] prevents unnecessary Streamlit reruns when panning or zooming
-    st_folium(render_res.fmap, width=None, height=540, returned_objects=[])
+    st.markdown('<div class="section-label">Details</div>', unsafe_allow_html=True)
+    tab_cmp, tab_time, tab_obs, tab_json = st.tabs(["Classifier vs HMM", "Timings", "Observations", "API response"])
+    with tab_cmp:
+        _render_comparison_tab(prediction)
+    with tab_time:
+        _render_timings_tab(prediction)
+    with tab_obs:
+        _render_observations_tab(prediction)
+    with tab_json:
+        st.json({k: (f"<list of {len(v)} items>" if isinstance(v, list) else v) for k, v in prediction.items()})
 
-    map_html = render_res.fmap.get_root().render()
     st.download_button(
-        label=f"Download Interactive Folium HTML (trip_{trip_id}.html)",
-        data=map_html,
+        label="Download map (HTML)",
+        data=render_res.fmap.get_root().render(),
         file_name=f"pathsnap_trip_{trip_id}.html",
         mime="text/html",
     )
 
-    with st.expander("Inspect Returned Observations & API JSON (Verification)"):
-        tab_obs, tab_json = st.tabs(["Sample Observations", "API Response Summary"])
-        with tab_obs:
-            obs = prediction.get("observations") or []
-            if obs:
-                st.caption(f"Showing first {min(len(obs), 100)} of {len(obs):,} observations returned by the API.")
-                st.dataframe(pd.DataFrame(obs[:100]), hide_index=True, use_container_width=True)
-            else:
-                st.info("No per-observation records included in this response.")
-        with tab_json:
-            summary_json = {
-                k: (f"<list of {len(v)} items>" if isinstance(v, list) else v)
-                for k, v in prediction.items()
-            }
-            st.json(summary_json)
-
 
 def main() -> None:
     _init_state()
-    api_url = _render_sidebar()
-
     if not st.session_state["bootstrapped"]:
         st.session_state["bootstrapped"] = True
-        _refresh_backend(api_url)
+        _refresh_backend(st.session_state["api_base_url"])
+    api_url = _render_sidebar()
 
-    st.title("PathSnap — Distributed Map-Matching Evaluator UI")
-    st.caption(
-        "PES University · UE24CS352A Machine Learning Hackathon 2026 · "
-        "Laptop 2 Evaluator Console"
+    st.title("PathSnap")
+    st.markdown(
+        '<div class="app-sub">Match noisy GPS traces to the road network · PES University ML Hackathon 2026</div>',
+        unsafe_allow_html=True,
     )
     _render_backend_header_banner()
 
@@ -456,39 +381,23 @@ def main() -> None:
     trips_err = st.session_state["trips_error"]
 
     if trips_err:
-        st.error(f"**Unable to load trips from Laptop 1:** {trips_err}")
+        st.error(f"Unable to load trips from Laptop 1: {trips_err}")
         st.info(
-            "**Quick Troubleshooting:**\n"
-            "1. Confirm FastAPI is running on Laptop 1 (`uvicorn ... --host 0.0.0.0 --port 8000`).\n"
-            "2. Confirm both laptops are on the same Wi-Fi / hotspot.\n"
-            "3. Enter Laptop 1's IP address in the sidebar **API Base URL** and click **Check Connection & Reload Trips**."
+            "1. Check that the API is running on Laptop 1 (`uvicorn ... --host 0.0.0.0`).\n"
+            "2. Check that both laptops are on the same network.\n"
+            "3. Enter Laptop 1's address in the sidebar and press **Check connection**."
         )
         return
-
     if not trips:
-        st.warning("Connected to API, but `/trips` returned an empty trip list.")
+        st.warning("Connected, but the API returned no trips.")
         return
 
-    _render_trip_cards(trips)
-
+    run_clicked = _render_trip_picker(trips)
     selected_id = st.session_state["selected_trip_id"]
-    run_col, info_col = st.columns([1.4, 3])
-    with run_col:
-        run_clicked = st.button(
-            f"Run Map-Matching for Trip {selected_id}",
-            type="primary",
-            use_container_width=True,
-            disabled=not selected_id,
-        )
-    with info_col:
-        st.caption(
-            f"Sends `POST {api_url}/predict` with `{{\"trip_id\": \"{selected_id}\"}}`. "
-            "Watch Laptop 1's terminal console for live request logs."
-        )
 
     if run_clicked and selected_id:
         st.session_state["last_error"] = None
-        with st.spinner(f"Running PathSnap pipeline on Laptop 1 for Trip {selected_id}..."):
+        with st.spinner(f"Running the pipeline on Laptop 1 for trip {selected_id}..."):
             try:
                 result = run_prediction(api_url, selected_id)
                 st.session_state["last_prediction"] = result
@@ -499,8 +408,7 @@ def main() -> None:
                 st.session_state["last_error"] = str(exc)
 
     if st.session_state["last_error"]:
-        st.error(f"**Prediction Failed:** {st.session_state['last_error']}")
-
+        st.error(f"Prediction failed: {st.session_state['last_error']}")
     if st.session_state["last_prediction"]:
         _render_results(st.session_state["last_prediction"])
 

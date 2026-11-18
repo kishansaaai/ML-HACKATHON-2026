@@ -1,0 +1,11 @@
+{'setting': 'all features', 'n_features': 27, 'cv_top1': 0.8748151302980544, 'cv_top1_std': 0.03735800741307723, 'cv_logloss': 0.0649993877800862, 'test_top1': 0.9021052081700883, 'seconds': 139}
+{'setting': 'without geometry', 'n_features': 22, 'cv_top1': 0.8738073604675632, 'cv_top1_std': 0.03943668019331946, 'cv_logloss': 0.06328542043557638, 'test_top1': 0.8971425586376222, 'seconds': 115}
+{'setting': 'without relative', 'n_features': 23, 'cv_top1': 0.8735358381614983, 'cv_top1_std': 0.03736751706204907, 'cv_logloss': 0.06654429197430647, 'test_top1': 0.8982918037925091, 'seconds': 94}
+{'setting': 'without topology', 'n_features': 24, 'cv_top1': 0.8732515018382074, 'cv_top1_std': 0.03686781217718742, 'cv_logloss': 0.06718013420491802, 'test_top1': 0.8872172595726897, 'seconds': 92}
+{'setting': 'without motion', 'n_features': 21, 'cv_top1': 0.8463244073472607, 'cv_top1_std': 0.037780996819770214, 'cv_logloss': 0.07449045024043312, 'test_top1': 0.8853889150080969, 'seconds': 155}
+{'setting': 'without neighbours', 'n_features': 18, 'cv_top1': 0.8570679604907931, 'cv_top1_std': 0.04072434021945376, 'cv_logloss': 0.07290266557376943, 'test_top1': 0.8854411534242281, 'seconds': 143}
+{'setting': 'only geometry', 'n_features': 5, 'cv_top1': 0.5380190124216276, 'cv_top1_std': 0.02421193729778451, 'cv_logloss': 0.1629685851566863, 'test_top1': 0.5476675547197409, 'seconds': 93}
+{'setting': 'only relative', 'n_features': 4, 'cv_top1': 0.5509701239888202, 'cv_top1_std': 0.02563461271680062, 'cv_logloss': 0.164578895077663, 'test_top1': 0.5439586271744241, 'seconds': 87}
+{'setting': 'only topology', 'n_features': 3, 'cv_top1': 0.3483149426395755, 'cv_top1_std': 0.0335072552378986, 'cv_logloss': 0.30395077601402865, 'test_top1': 0.298803740270595, 'seconds': 68}
+{'setting': 'only motion', 'n_features': 6, 'cv_top1': 0.3768319267302733, 'cv_top1_std': 0.01819069668030723, 'cv_logloss': 0.2352723770009825, 'test_top1': 0.39748210834247505, 'seconds': 72}
+{'setting': 'only neighbours', 'n_features': 9, 'cv_top1': 0.842865612511029, 'cv_top1_std': 0.03459509309787066, 'cv_logloss': 0.07810115120866754, 'test_top1': 0.8682024761009246, 'seconds': 84}

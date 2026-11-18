@@ -32,6 +32,25 @@ Fold-to-fold standard deviation of Top-1 is about 3.7 points for every model (fo
 - Best: num_leaves 61, learning_rate 0.095, n_estimators 250, min_child_samples 63, subsample 0.85, colsample_bytree 0.65, reg_lambda 0.79, reg_alpha 0.06.
 - **Result: no gain.** Refit with the same protocol as the untuned model: CV Top-1 87.46 % (untuned 87.48 %), `student_test` Top-1 90.03 % (90.21 %), macro-F1 0.9416 (0.9406), log loss 0.0481 (0.0480). All 34 trials sit between 87.0 % and 87.5 % CV Top-1; the defaults were already near the plateau. By our CV-only rule the **untuned model is exported** (`artifacts/`). A tuning attempt for HistGradientBoosting was started and stopped unfinished; its search record was not saved and is not used anywhere.
 
+
+## Feature-group ablation (LightGBM, untuned config, same grouped CV; `results/ablation.csv`)
+
+| Setting | Features | CV Top-1 | change vs all | CV log loss | student_test Top-1 |
+| --- | --- | --- | --- | --- | --- |
+| all features | 27 | 87.48 % |  | 0.0650 | 90.21 % |
+| without geometry | 22 | 87.38 % | -0.10 pts | 0.0633 | 89.71 % |
+| without relative | 23 | 87.35 % | -0.13 pts | 0.0665 | 89.83 % |
+| without topology | 24 | 87.33 % | -0.16 pts | 0.0672 | 88.72 % |
+| without motion | 21 | 84.63 % | -2.85 pts | 0.0745 | 88.54 % |
+| without neighbours | 18 | 85.71 % | -1.77 pts | 0.0729 | 88.54 % |
+| only geometry | 5 | 53.80 % | -33.68 pts | 0.1630 | 54.77 % |
+| only relative | 4 | 55.10 % | -32.38 pts | 0.1646 | 54.40 % |
+| only topology | 3 | 34.83 % | -52.65 pts | 0.3040 | 29.88 % |
+| only motion | 6 | 37.68 % | -49.80 pts | 0.2353 | 39.75 % |
+| only neighbours | 9 | 84.29 % | -3.19 pts | 0.0781 | 86.82 % |
+
+Reading it (from the measured numbers): removing the **motion** features (speed, heading mismatch, time gaps) costs the most, about 2.9 points of CV Top-1, and removing the **neighbour-support** features costs about 1.8 points. Removing geometry, relative-rank or topology features each costs 0.1 to 0.2 points of CV Top-1, although their removal worsens `student_test` Top-1 by 0.4 to 1.5 points (topology the most). Geometry, relative or topology features alone reach only 35 to 55 % Top-1 (the nearest-road baseline gets 55 %), so accuracy comes from combining groups; the neighbour features alone reach 84.3 %, which shows that checking whether neighbouring GPS points also fit an arc is the strongest feature group. The 0.1 to 0.2 point changes are tiny next to the fold-to-fold spread (about 3.7 points) and come from a single seed, so do not over-interpret them.
+
 ## Limitations
 - A single seed for each model; no repeated-CV confidence intervals.
 - Models see only features computed from GPS plus the road geometry (no learned road-type or speed-limit information, which the dataset does not provide).

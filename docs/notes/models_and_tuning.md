@@ -9,16 +9,20 @@ Code: `scripts/train_heavy.py`, `scripts/baseline_nearest.py`, `scripts/tune.py`
 
 ## Results (student_test = 10 trips, CV = 5 grouped folds)
 
-| Model | Family | CV Top-1 | test Top-1 | test macro-F1 | test log loss | test continuity (distinct-arc, NOT official) | fit time |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| HistGradientBoosting | boosting | 87.55 % | 90.07 % | 0.940 | 0.0488 | 82.9 % | 17 s |
-| **LightGBM (selected)** | boosting | 87.48 % | 90.21 % | 0.941 | 0.0480 | 82.7 % | 12 s |
-| XGBoost | boosting | 87.47 % | 90.16 % | 0.941 | 0.0483 | 83.4 % | 18 s |
-| Random Forest (50 trees) | bagging | 87.33 % | 88.81 % | 0.935 | 0.0561 | 83.0 % | 22 s |
-| Extra Trees (50 trees) | randomised trees | 87.03 % | 88.41 % | 0.933 | 0.0561 | 81.8 % | 24 s |
-| Nearest road (no learning) | baseline | 55.36 % | 53.60 % | n/a | n/a | 45.7 % | n/a |
+| Model | Family | CV Top-1 | test Top-1 | test macro-F1 | test log loss | test route continuity (official) | test miss rate | fit time |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| HistGradientBoosting | boosting | 87.55 % | 90.07 % | 0.940 | 0.0488 | 95.78 % | 0.01 % | 21 s |
+| **LightGBM (selected)** | boosting | 87.48 % | 90.21 % | 0.941 | 0.0480 | 95.58 % | 0.01 % | 12 s |
+| LightGBM, Bayesian-tuned | boosting | 87.46 % | 90.03 % | 0.942 | 0.0481 | 95.88 % | 0.01 % | 11 s |
+| XGBoost | boosting | 87.47 % | 90.16 % | 0.941 | 0.0483 | 95.87 % | 0.01 % | 25 s |
+| Random Forest (50 trees) | bagging | 87.33 % | 88.81 % | 0.935 | 0.0561 | 95.63 % | 0.01 % | 31 s |
+| Extra Trees (50 trees) | randomised trees | 87.03 % | 88.41 % | 0.933 | 0.0561 | 95.31 % | 0.01 % | 25 s |
+| Nearest road + heading rule (no learning) | baseline | 81.52 % | 83.01 % | n/a | n/a | 91.08 % | n/a | n/a |
+| Nearest road (no learning) | baseline | 55.36 % | 53.60 % | n/a | n/a | 80.25 % | n/a | n/a |
 
-**Continuity column caveat.** The continuity figures in this table use the stricter *distinct-arc* variant (repeated arcs collapsed first, then share of consecutive different arcs that connect head-to-tail). The official metric (`pathsnap.decoder.metrics.route_continuity`, the PRD definition) counts all adjacent point pairs and treats a repeated arc as connected, which gives much higher values. Official values for the exported LightGBM classifier and the HMM are in `docs/notes/integration_a_b.md`; the other models were not re-scored under the official definition.
+All rows were re-scored with the same code and reproduce the first comparison exactly. Extra candidate-level metrics (accuracy, precision, recall, confusion counts) and sequence-level scores (arc-set F1, normalised edit distance against the reference route) per model are in `results/metrics_table.csv`; confusion matrices for every model are in `results/plots/confusion_all_models.png`. The simple models (Logistic Regression, Gaussian NB, KNN) were trained by Person C (`scripts/train_simple.py` on their branch) and are not in this table yet.
+
+**Heading baseline is strong.** A simple rule (nearest arc, penalised by heading mismatch) already reaches 83.0 % `student_test` Top-1; the learned classifier adds about 7 points on top of it. The report should present it as the honest reference point and not only the 53.6 % nearest-road baseline.
 
 Fold-to-fold standard deviation of Top-1 is about 3.7 points for every model (folds range from about 82 % to 91 %): some trips are much harder than others.
 

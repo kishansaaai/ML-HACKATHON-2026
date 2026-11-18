@@ -4,6 +4,8 @@
 * model_comparison.png       : CV Top-1, student_test Top-1/macro-F1, log loss for every model
 * calibration_lightgbm.png   : reliability diagram of the exported model on student_test
 * confusion_lightgbm.png     : candidate-level confusion matrix of the exported model on student_test
+* confusion_all_models.png    : the same confusion matrix for every model (from results/experiments.csv)
+* metrics_table.csv          : the consolidated comparison table (official metrics) for the report
 * label_quality.csv          : label-alignment quality summary (from results/label_stats.csv)
 """
 from __future__ import annotations
@@ -63,7 +65,7 @@ def label_quality() -> None:
 def model_comparison() -> None:
     d = pd.read_csv(RESULTS_DIR / "experiments.csv").drop_duplicates("model", keep="last")
     d = d[d.model != "lightgbm_tuned"].set_index("model")
-    order = ["nearest_arc", "extra_trees", "random_forest", "xgboost", "hist_gb", "lightgbm"]
+    order = ["nearest_arc", "nearest_heading_aware", "extra_trees", "random_forest", "xgboost", "hist_gb", "lightgbm"]
     d = d.loc[[m for m in order if m in d.index]]
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
     x = np.arange(len(d))
@@ -129,8 +131,46 @@ def calibration_and_confusion() -> None:
     print(cm)
 
 
+def confusion_all_models() -> None:
+    d = pd.read_csv(RESULTS_DIR / "experiments.csv")
+    d = d.dropna(subset=["test_tn"]).drop_duplicates("model", keep="last").set_index("model")
+    order = [m for m in ["random_forest", "extra_trees", "xgboost", "hist_gb", "lightgbm", "lightgbm_tuned"] if m in d.index]
+    fig, axes = plt.subplots(1, len(order), figsize=(3.1 * len(order), 3.2))
+    for ax, name in zip(np.atleast_1d(axes), order):
+        r = d.loc[name]
+        cm = np.array([[r.test_tn, r.test_fp], [r.test_fn, r.test_tp]], dtype=float)
+        ax.imshow(cm / cm.sum(axis=1, keepdims=True), cmap="Blues", vmin=0, vmax=1)
+        for i in range(2):
+            for j in range(2):
+                ax.text(j, i, f"{int(cm[i, j]):,}", ha="center", va="center", fontsize=8,
+                        color="white" if cm[i, j] / cm[i].sum() > 0.5 else "black")
+        ax.set_xticks([0, 1], ["pred 0", "pred 1"], fontsize=8)
+        ax.set_yticks([0, 1], ["true 0", "true 1"], fontsize=8)
+        ax.set_title(name, fontsize=9)
+    fig.suptitle("Candidate-level confusion matrices, student_test (threshold 0.5; colour = row-normalised)", fontsize=9)
+    fig.tight_layout()
+    fig.savefig(PLOTS / "confusion_all_models.png", dpi=150)
+    plt.close(fig)
+
+
+def metrics_table() -> None:
+    d = pd.read_csv(RESULTS_DIR / "experiments.csv").dropna(subset=["test_tn"]).drop_duplicates("model", keep="last")
+    cols = {"model": "model", "family": "family", "cv_macro_f1_mean": "cv_macro_f1", "cv_top1_mean": "cv_top1",
+            "cv_route_continuity_mean": "cv_route_continuity", "test_macro_f1": "test_macro_f1",
+            "test_top1": "test_top1", "test_accuracy": "test_candidate_accuracy", "test_precision": "test_precision",
+            "test_recall": "test_recall", "test_logloss": "test_logloss", "test_route_continuity": "test_route_continuity",
+            "test_candidate_miss_rate": "test_candidate_miss_rate", "test_seq_arc_f1": "test_seq_arc_f1",
+            "test_seq_arc_jaccard": "test_seq_arc_jaccard", "test_seq_edit_dist_norm": "test_seq_edit_dist_norm",
+            "train_time_s": "train_time_s", "infer_time_s_per_trip": "infer_time_s_per_trip"}
+    out = d[[c for c in cols if c in d.columns]].rename(columns=cols).round(4)
+    out.to_csv(RESULTS_DIR / "metrics_table.csv", index=False)
+    print(out.to_string(index=False))
+
+
 if __name__ == "__main__":
     candidate_sweep()
     label_quality()
     model_comparison()
     calibration_and_confusion()
+    confusion_all_models()
+    metrics_table()

@@ -16,9 +16,13 @@ import pandas as pd
 
 from pathsnap.cand_metrics import (candidate_metrics, distinct_arc_continuity, observation_metrics,
                                  route_continuity, top1_predictions)
+from sklearn.metrics import accuracy_score, confusion_matrix
+
 from pathsnap.data import load_folds, load_part, stride_subsample, trip_arcs, xy
+from pathsnap.decoder.metrics import route_sequence_metrics
+from pathsnap.io import load_trip
 from pathsnap.models.registry import MODEL_SPECS, SEED, make_model, proba
-from pathsnap.paths import RESULTS_DIR
+from pathsnap.paths import RESULTS_DIR, trip_dir
 
 
 def evaluate(df: pd.DataFrame, obs: pd.DataFrame, score: np.ndarray, part: str) -> dict:
@@ -35,6 +39,21 @@ def evaluate(df: pd.DataFrame, obs: pd.DataFrame, score: np.ndarray, part: str) 
     m["route_continuity"] = float(np.mean(conts))              # official definition
     m["route_continuity_distinct"] = float(np.mean(dconts))    # stricter, not official
     m["route_breaks"] = breaks
+    y, yhat = df["label"].to_numpy(), (np.clip(score, 1e-7, 1 - 1e-7) >= 0.5).astype(int)
+    m["accuracy"] = float(accuracy_score(y, yhat))
+    tn, fp, fn, tp = confusion_matrix(y, yhat, labels=[0, 1]).ravel()
+    m.update(tn=int(tn), fp=int(fp), fn=int(fn), tp=int(tp))
+    if part == "student_test":      # sequence-level score vs the reference route (dev data only, after prediction)
+        seqs = []
+        for tid, g in pred.groupby("trip_id"):
+            arcs_seq = g.sort_values("obs_idx")["arc_id"].to_numpy()
+            collapsed = arcs_seq[np.r_[True, arcs_seq[1:] != arcs_seq[:-1]]].tolist()
+            ref_route = load_trip(trip_dir(part, tid), with_labels=True).route.tolist()
+            q = route_sequence_metrics(collapsed, ref_route)
+            q["edit_norm"] = q["arc_sequence_edit_distance"] / max(1, len(ref_route))
+            seqs.append(q)
+        for k in ("route_arc_set_f1", "route_arc_set_jaccard", "edit_norm"):
+            m["seq_" + k] = float(np.mean([q[k] for q in seqs]))
     return m
 
 
@@ -87,6 +106,9 @@ def run(name: str, stride: int, params: dict | None = None, tag: str = "") -> di
                test_top1=te["top1"], test_logloss=te["logloss"], test_route_continuity=te["route_continuity"],
                test_route_continuity_distinct=te["route_continuity_distinct"],
                test_route_breaks=te["route_breaks"], test_candidate_miss_rate=te["candidate_miss_rate"],
+               test_accuracy=te["accuracy"], test_tn=te["tn"], test_fp=te["fp"], test_fn=te["fn"], test_tp=te["tp"],
+               test_seq_arc_f1=te["seq_route_arc_set_f1"], test_seq_arc_jaccard=te["seq_route_arc_set_jaccard"],
+               test_seq_edit_dist_norm=te["seq_edit_norm"],
                train_time_s=train_s, infer_time_s_per_trip=infer_s / test_o.trip_id.nunique(),
                timestamp=datetime.now().isoformat(timespec="seconds"))
     append_row(row)
@@ -100,7 +122,13 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=list(MODEL_SPECS))
     ap.add_argument("--stride", type=int, default=3, help="train on every n-th GPS point per trip")
+    ap.add_argument("--params-from", help="tuning_summary json: train with its best_params, tagged _tuned")
     ap.add_argument("--n-estimators", type=int, default=None, help="override tree count (ET/RF time-box)")
     args = ap.parse_args()
-    for n in args.models:
-        run(n, args.stride, {"n_estimators": args.n_estimators} if args.n_estimators else None)
+    if args.params_from:
+        best = json.loads(open(args.params_from, encoding="utf-8").read())["best_params"]
+        for n in args.models:
+            run(n, args.stride, best, "_tuned")
+    else:
+        for n in args.models:
+            run(n, args.stride, {"n_estimators": args.n_estimators} if args.n_estimators else None)

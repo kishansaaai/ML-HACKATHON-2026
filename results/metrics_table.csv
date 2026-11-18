@@ -1,0 +1,7 @@
+model,family,cv_macro_f1,cv_top1,cv_route_continuity,test_macro_f1,test_top1,test_candidate_accuracy,test_precision,test_recall,test_logloss,test_route_continuity,test_candidate_miss_rate,test_seq_arc_f1,test_seq_arc_jaccard,test_seq_edit_dist_norm,train_time_s,infer_time_s_per_trip
+lightgbm,Boosting (leaf-wise GBDT),0.927,0.8748,0.9501,0.9406,0.9021,0.9807,0.9029,0.8809,0.048,0.9558,0.0001,0.8983,0.8182,0.5187,12.3269,0.0908
+hist_gb,"Boosting (histogram GBDT, sklearn)",0.9276,0.8755,0.9498,0.9399,0.9007,0.9804,0.8979,0.8833,0.0488,0.9578,0.0001,0.8979,0.8173,0.5142,20.7349,0.1261
+xgboost,"Boosting (XGBoost, depth-wise)",0.9269,0.8747,0.9506,0.9413,0.9016,0.9809,0.9041,0.8821,0.0483,0.9587,0.0001,0.8982,0.8179,0.528,24.7099,0.0431
+lightgbm_tuned,Boosting (leaf-wise GBDT),0.9262,0.8746,0.9505,0.9416,0.9003,0.981,0.9028,0.8848,0.0481,0.9588,0.0001,0.8996,0.8199,0.5208,11.4675,0.0992
+extra_trees,Tree ensemble (randomised),0.9245,0.8703,0.9443,0.9328,0.8841,0.9784,0.8985,0.8573,0.0561,0.9531,0.0001,0.8894,0.8036,0.649,25.4161,0.0617
+random_forest,Tree ensemble (bagging),0.9265,0.8733,0.9462,0.9345,0.8881,0.9788,0.8948,0.8668,0.0561,0.9563,0.0001,0.8924,0.8088,0.6198,31.3704,0.0802

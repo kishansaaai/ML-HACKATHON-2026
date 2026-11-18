@@ -1,0 +1,69 @@
+GET /health
+{
+  "status": "ok",
+  "model_loaded": true,
+  "model_name": "LightGBM (exported)",
+  "version": "1.0.0",
+  "partition": "student_test",
+  "trips_available": 10
+}
+
+GET /trips  (partition=student_test, 10 trips; first two shown)
+{
+  "partition": "student_test",
+  "trips": [
+    {
+      "trip_id": "00000000",
+      "num_observations": 2503,
+      "num_nodes": 8542,
+      "num_arcs": 18196
+    },
+    {
+      "trip_id": "00000007",
+      "num_observations": 1354,
+      "num_nodes": 2061,
+      "num_arcs": 4369
+    }
+  ]
+}
+
+POST /predict {"trip_id": "00000052"}  -> HTTP 200 (summary of the response)
+{
+  "trip_id": "00000052",
+  "num_observations": 262,
+  "metrics": {
+    "classifier_only": {
+      "top1_accuracy": 0.9733,
+      "macro_f1": 0.902,
+      "route_continuity": 0.9349,
+      "continuity_breaks": 17
+    },
+    "hmm": {
+      "top1_accuracy": 0.9809,
+      "macro_f1": 0.9174,
+      "route_continuity": 0.9579,
+      "continuity_breaks": 11
+    }
+  },
+  "timings_sec": {
+    "load_and_index": 0.028,
+    "candidates_and_features": 0.031,
+    "classifier_inference": 0.076,
+    "hmm_viterbi": 0.165,
+    "server_scoring": 0.094,
+    "total": 0.595
+  },
+  "fields": [
+    "classifier_route_segments",
+    "hmm_route_polyline",
+    "hmm_route_segments",
+    "metrics",
+    "model_name",
+    "num_observations",
+    "observations",
+    "raw_gps",
+    "server_timestamp",
+    "timings_sec",
+    "trip_id"
+  ]
+}

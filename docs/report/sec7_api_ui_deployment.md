@@ -8,31 +8,112 @@
 | --- | --- |
 | `GET /health` | status, `model_loaded`, `model_name`, version, `partition`, number of trips available |
 | `GET /trips` | the partition name and its trips with counts of observations, nodes and arcs |
-| `POST /predict` `{"trip_id": ...}` | runs candidates, classifier and HMM; returns raw GPS, HMM route segments, classifier route segments, per-observation arc IDs and confidence, classifier-only and HMM metrics, per-stage timings |
+| `POST /predict` `{"trip_id": ...}` | runs candidates, classifier and HMM; returns raw GPS, HMM and classifier route segments, per-observation arc IDs and confidence, classifier-only and HMM metrics, per-stage timings |
 
 The full field list is in `docs/API_CONTRACT.md`.
 
-## 7.2 No ground truth leakage
+## 7.2 Screenshots of the working UI
+
+![Figure 9. The evaluator UI after Match route on student_test trip 00000052: connection status and partition in the sidebar, model name, trip selector, headline metrics (HMM Top-1, route continuity, sequence F1, server time with the difference from the classifier alone) and the Folium route map with legend and layer control.](docs/report/fig/ui_match_route.png)
+
+The screenshot was taken from the running UI of this repository (`ui/app.py`) connected to the running API on the development partition student_test; for evaluation the API reads the evaluator folder instead and the UI shows that partition name.
+
+## 7.3 API responses and console log (receiving laptop)
+
+Real responses of the running API (student_test partition, `curl`/`requests`, abbreviated where noted):
+
+```
+GET /health
+{
+  "status": "ok",
+  "model_loaded": true,
+  "model_name": "LightGBM (exported)",
+  "version": "1.0.0",
+  "partition": "student_test",
+  "trips_available": 10
+}
+
+GET /trips  (partition=student_test, 10 trips; first two shown)
+{
+  "partition": "student_test",
+  "trips": [
+    {
+      "trip_id": "00000000",
+      "num_observations": 2503,
+      "num_nodes": 8542,
+      "num_arcs": 18196
+    },
+    {
+      "trip_id": "00000007",
+      "num_observations": 1354,
+      "num_nodes": 2061,
+      "num_arcs": 4369
+    }
+  ]
+}
+
+POST /predict {"trip_id": "00000052"}  -> HTTP 200 (summary of the response)
+{
+  "trip_id": "00000052",
+  "num_observations": 262,
+  "metrics": {
+    "classifier_only": {
+      "top1_accuracy": 0.9733,
+      "macro_f1": 0.902,
+      "route_continuity": 0.9349,
+      "continuity_breaks": 17
+    },
+    "hmm": {
+      "top1_accuracy": 0.9809,
+      "macro_f1": 0.9174,
+      "route_continuity": 0.9579,
+      "continuity_breaks": 11
+    }
+  },
+  "timings_sec": {
+    "load_and_index": 0.028,
+    "candidates_and_features": 0.031,
+    "classifier_inference": 0.076,
+    "hmm_viterbi": 0.165,
+    "server_scoring": 0.094,
+    "total": 0.595
+  },
+  "fields": [
+    "classifier_route_segments",
+    "hmm_route_polyline",
+    "hmm_route_segments",
+    "metrics",
+    "model_name",
+    "num_observations",
+    "observations",
+    "raw_gps",
+    "server_timestamp",
+    "timings_sec",
+    "trip_id"
+  ]
+}
+```
+
+Console output of the API process on the receiving laptop (one line per `POST /predict`, also written to `logs/api.log`):
+
+```
+[2026-11-18T15:43:39Z] POST /predict trip_id=00000000 | obs=2503 | clf_top1=95.3% | hmm_top1=95.6% | continuity=99.2% | total=3.87s
+[2026-11-18T15:44:22Z] POST /predict trip_id=00000052 | obs=262 | clf_top1=97.3% | hmm_top1=98.1% | continuity=95.8% | total=1.01s
+[2026-11-18T15:46:28Z] POST /predict trip_id=00000009 | obs=1049 | clf_top1=88.5% | hmm_top1=89.3% | continuity=93.9% | total=5.85s
+[2026-11-18T15:46:35Z] POST /predict trip_id=00000040 | obs=2995 | clf_top1=96.1% | hmm_top1=96.4% | continuity=98.8% | total=6.58s
+```
+
+## 7.4 No ground-truth leakage
 
 - Prediction (`pathsnap.pipeline.predict`) loads trips with `with_labels=False` and cannot read `.route`.
 - `src/pathsnap/scoring.py` opens `.route` only after the prediction is finished, to compute the metrics; the response contains no reference-route field.
 - A test runs `/predict` on a trip copy without a `.route` file; it still returns a prediction and `metrics: null` (`tests/test_api_integration.py`).
 - The evaluator folder is set with `PATHSNAP_EVALUATOR_DIR`; startup fails unless it holds exactly 10 valid trip folders, so the server never silently falls back to development data. The evaluator trips are not in the repository (`.gitignore`).
-- Nothing is hard-coded: every trip is processed by the same code path.
-
-## 7.3 Logging
-
-Every `POST /predict` prints one readable line on the API console and in `logs/api.log`, for example:
-
-`POST /predict trip_id=00000052 | obs=262 | clf_top1=97.3% | hmm_top1=98.1% | continuity=95.8% | total=0.73s`
-
-## 7.4 UI
-
-The UI shows the model name (from `/health`) at the top, the connection status, API address and partition in the sidebar, a dropdown with the trips returned by `/trips` and a **Match route** button. After a run it shows four headline numbers (Top-1, route continuity, sequence F1, server time with the difference from the classifier alone), the Folium map (raw GPS, classifier-only, HMM route, start and end markers, layer control), and tabs for the classifier-versus-HMM table, per-stage timings, the per-observation records and the raw API summary. Errors (unreachable server, bad trip) show readable messages.
+- Nothing is hard-coded: every trip goes through the same code path.
 
 ## 7.5 Timings
 
-`python scripts/evaluate_api.py` runs all 10 student-test trips through the API and checks that its pooled Top-1 equals the offline pipeline's (difference 0.0000 % in the last run). Server time per trip, measured on the development laptop:
+`python scripts/evaluate_api.py` runs all 10 student-test trips through the API and checks that the pooled Top-1 equals the offline pipeline's (difference 0.0000 % in the last run). Server time per trip on the development laptop:
 
 | Trip | GPS points | Server time (s) |
 | --- | ---: | ---: |
@@ -55,4 +136,4 @@ The slowest trip is 00000056 at 15.4 s, under the 30 s target.
 2. **Laptop 2:** `pip install -r ui/requirements.txt`, then `cd ui` and `run_ui.bat http://<laptop-1-ip>:8000`; the UI opens at `http://localhost:8501`.
 3. Check `http://<laptop-1-ip>:8000/health` first: it must show the model name and the right partition.
 
-**Status.** The API and UI run together from this repository on one development laptop; the API was reached through the laptop's LAN address with the firewall rule in place. The complete two-laptop run on the evaluator trips is performed at the evaluation. The step-by-step checklist is `docs/DEMO_CHECKLIST.md`.
+The step-by-step checklist is `docs/DEMO_CHECKLIST.md`.

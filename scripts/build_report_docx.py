@@ -220,9 +220,7 @@ def build(src: Path, out: Path):
     tp = doc.add_paragraph(); fmt(tp, WD_ALIGN_PARAGRAPH.LEFT, 0, 0)
     add_field(tp, 'TOC \\o "1-2" \\h \\z \\u', 11)
 
-    # ---- footer with page numbers
-    ft = sec.footer.paragraphs[0]; fmt(ft, WD_ALIGN_PARAGRAPH.CENTER, 0, 0, line=1.0)
-    set_font(ft.add_run("PathSnap technical report | UE24CS352A   |   Page "), 9); add_field(ft, "PAGE", 9)
+    # no header or footer on any page (the section header/footer stay empty)
 
     files = sorted(p for p in src.glob("sec*.md"))
     for f in files:

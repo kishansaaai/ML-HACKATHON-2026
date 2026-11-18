@@ -221,7 +221,7 @@ class ReportDoc(BaseDocTemplate):
         frame = Frame(self.leftMargin, self.bottomMargin, self.width, self.height, id="body")
         self.addPageTemplates([
             PageTemplate(id="first", frames=[frame], onPage=self._no_footer),
-            PageTemplate(id="later", frames=[frame], onPage=self._footer),
+            PageTemplate(id="later", frames=[frame], onPage=self._no_footer),  # no header or footer on any page
         ])
         self._key = 0
 

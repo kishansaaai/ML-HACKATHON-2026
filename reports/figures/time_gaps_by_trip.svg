@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500">
+<rect width="100%" height="100%" fill="white"/>
+<text x="450.0" y="34" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold">Timestamp gaps longer than 2 seconds</text>
+<line x1="85" y1="65" x2="85" y2="425" stroke="#334155"/>
+<line x1="85" y1="425" x2="875" y2="425" stroke="#334155"/>
+<line x1="80" y1="425.0" x2="875" y2="425.0" stroke="#e2e8f0"/>
+<text x="73" y="430.0" text-anchor="end" font-family="Arial" font-size="13" fill="#334155">0</text>
+<line x1="80" y1="333.6" x2="875" y2="333.6" stroke="#e2e8f0"/>
+<text x="73" y="338.6" text-anchor="end" font-family="Arial" font-size="13" fill="#334155">16</text>
+<line x1="80" y1="242.1" x2="875" y2="242.1" stroke="#e2e8f0"/>
+<text x="73" y="247.1" text-anchor="end" font-family="Arial" font-size="13" fill="#334155">32</text>
+<line x1="80" y1="156.4" x2="875" y2="156.4" stroke="#e2e8f0"/>
+<text x="73" y="161.4" text-anchor="end" font-family="Arial" font-size="13" fill="#334155">47</text>
+<line x1="80" y1="65.0" x2="875" y2="65.0" stroke="#e2e8f0"/>
+<text x="73" y="70.0" text-anchor="end" font-family="Arial" font-size="13" fill="#334155">63</text>
+<rect x="88.0" y="65.0" width="17.8" height="360.0" fill="#2563eb" opacity="0.8"/>
+<rect x="107.8" y="373.6" width="17.8" height="51.4" fill="#f97316" opacity="0.8"/>
+<text x="109.7" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">0</text>
+<rect x="137.4" y="385.0" width="17.8" height="40.0" fill="#2563eb" opacity="0.8"/>
+<rect x="157.1" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<rect x="186.8" y="413.6" width="17.8" height="11.4" fill="#2563eb" opacity="0.8"/>
+<rect x="206.5" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="208.4" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">72</text>
+<rect x="236.1" y="402.1" width="17.8" height="22.9" fill="#2563eb" opacity="0.8"/>
+<rect x="255.9" y="419.3" width="17.8" height="5.7" fill="#f97316" opacity="0.8"/>
+<rect x="285.5" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="305.2" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="307.2" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">144</text>
+<rect x="334.9" y="419.3" width="17.8" height="5.7" fill="#2563eb" opacity="0.8"/>
+<rect x="354.6" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<rect x="384.2" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="404.0" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="405.9" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">216</text>
+<rect x="433.6" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="453.4" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<rect x="483.0" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="502.8" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="504.7" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">288</text>
+<rect x="532.4" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="552.1" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<rect x="581.8" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="601.5" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="603.4" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">360</text>
+<rect x="631.1" y="419.3" width="17.8" height="5.7" fill="#2563eb" opacity="0.8"/>
+<rect x="650.9" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<rect x="680.5" y="419.3" width="17.8" height="5.7" fill="#2563eb" opacity="0.8"/>
+<rect x="700.2" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="702.2" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">432</text>
+<rect x="729.9" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="749.6" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<rect x="779.2" y="425.0" width="17.8" height="0.0" fill="#2563eb" opacity="0.8"/>
+<rect x="799.0" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="800.9" y="447" text-anchor="middle" font-family="Arial" font-size="12" fill="#334155">504</text>
+<rect x="828.6" y="419.3" width="17.8" height="5.7" fill="#2563eb" opacity="0.8"/>
+<rect x="848.4" y="425.0" width="17.8" height="0.0" fill="#f97316" opacity="0.8"/>
+<text x="450.0" y="482" text-anchor="middle" font-family="Arial" font-size="15">Gap count per trip</text>
+<text transform="translate(24 250.0) rotate(-90)" text-anchor="middle" font-family="Arial" font-size="15">Trips</text>
+<rect x="725" y="43" width="14" height="14" fill="#2563eb"/>
+<text x="746" y="55" font-family="Arial" font-size="14">train</text>
+<rect x="725" y="67" width="14" height="14" fill="#f97316"/>
+<text x="746" y="79" font-family="Arial" font-size="14">student_test</text>
+</svg>

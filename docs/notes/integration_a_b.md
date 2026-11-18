@@ -9,6 +9,9 @@ Branch `integration/a-b` = `a/ml-pipeline` + `feature/person-b-decoder` + the fi
 4. **One definition of route continuity.** A's first comparison used a stricter *distinct-arc* variant. `cand_metrics.route_continuity` now implements the official (B's / PRD) definition and is tested for agreement with `pathsnap.decoder.metrics`; the old one is `distinct_arc_continuity`. Every model was then re-scored with the same code (`scripts/rerun_all_models.sh`): the first-run rows keep their values in `*_distinct*` columns, and the official columns are filled by the re-run rows. Do not quote `*_distinct*` numbers as "route continuity".
 5. **Stitching speed.** `RoadGraph._dijkstra` now stops when the target node is settled (exact; verified against the full search on 180 random node pairs, 0 mismatches, plus a unit test). Slowest dev trip (3,958 points): 11.8 s -> 9.8 s, including the one-off ~2.5 s model load. The rest is the HMM's transition search; fine for the demo, worth re-timing on the largest evaluator trip.
 
+> SUPERSEDED for the decoder numbers: Person B tuned the decoder afterwards (beta 200 m, gap 30 s, sigma 25 m, unreachable penalty -5);
+> see `docs/section5_decoder.md` and `results/hmm_tuning/`. The table below is the earlier UNTUNED comparison, kept for the record.
+
 ## Pipeline results on the 10 `student_test` trips (development data, DEFAULT untuned decoder: beta 50 m, gap 120 s)
 Reproduce: `python scripts/eval_pipeline.py` (writes `results/pipeline_student_test_default.csv`).
 

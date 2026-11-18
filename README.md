@@ -10,7 +10,7 @@ decoder turns those scores into one connected route.
 | --- | --- |
 | Candidate generation, labels, 27 features | done (`src/pathsnap/`) |
 | Model comparison (5 models + baseline), Bayesian tuning, export | done (`scripts/`, `results/`, `artifacts/`) |
-| HMM / Viterbi decoder | implemented, settings **not yet tuned** (`src/pathsnap/decoder/`) |
+| HMM / Viterbi decoder | done; parameters tuned on out-of-fold training trips and frozen (`src/pathsnap/decoder/`, `configs/decoder_best.json`, `results/hmm_tuning/`) |
 | End-to-end `predict(trip_dir)` | done (`src/pathsnap/pipeline.py`) |
 | FastAPI backend (`/health`, `/trips`, `/predict`), server-side scoring | done (`src/pathsnap/api.py`, `scoring.py`) |
 | Evaluator UI (Streamlit + Folium) | done (`ui/`) |
@@ -77,7 +77,7 @@ scoring/evaluation code after prediction, never by the model or decoder.
 Evaluate classifier-only vs classifier + HMM on development trips (labels used after prediction):
 
 ```
-python scripts/eval_pipeline.py                         # student_test, default decoder settings
+python scripts/eval_pipeline.py                         # student_test, tuned decoder settings (the defaults)
 python scripts/make_oof_scores.py                       # out-of-fold scores for tuning the decoder on training trips
 python scripts/eval_pipeline.py --part train --oof --beta 30 --tag b30
 ```

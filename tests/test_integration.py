@@ -98,3 +98,18 @@ def test_shortest_path_early_exit_matches_full_search(tmp_path):
                 continue
             dist, path = g.shortest_path(a, b, 10_000.0)
             assert dist == pytest.approx(full_d[b]) and path == g._backtrack(a, b, full_p)
+
+
+def test_oof_scorer_covers_every_candidate_and_refuses_non_training_trips():
+    from pathsnap.oof import OOF_PATH, oof_scorer
+    if not OOF_PATH.exists():
+        pytest.skip("run scripts/make_oof_scores.py first")
+    from pathsnap.candidates import build_candidates
+    from pathsnap.paths import DATA_ROOT
+    d = DATA_ROOT / "train" / "00000001"
+    trip = load_trip(d)
+    table = build_candidates(trip, TripGraph(trip))
+    p = oof_scorer("00000001")(table)
+    assert p.shape == (len(table),) and ((p >= 0) & (p <= 1)).all()
+    with pytest.raises(KeyError):
+        oof_scorer("00000000")                                 # a student_test trip has no OOF scores

@@ -18,3 +18,18 @@ Reproduce: `python scripts/eval_pipeline.py` (writes `results/pipeline_student_t
 | LightGBM + HMM | 89.89 % | 97.28 % | 413 |
 
 The HMM is better on 5 trips and worse on 5 for Top-1, so with default settings it does **not** improve Top-1; it does roughly halve route breaks. Decoder parameters (beta, optional emission sigma, gap threshold) have not been tuned: do that with group-aware CV on the 80 training trips (`pathsnap.decoder.tuning`, `scripts/eval_pipeline.py --part train`), never on `student_test` after looking at it and never on evaluator data. Do not claim an HMM gain in the report until then.
+
+## Handoff to Person B: tuning the decoder
+Out-of-fold (OOF) classifier scores exist so the decoder is tuned on realistic scores. The exported LightGBM was trained on all 80 training trips (Top-1 about 94.5 % on them vs 87.5 % on unseen trips), so tuning on its in-sample scores would tune for over-confident emissions.
+
+```
+python scripts/make_oof_scores.py                       # ~1 min; builds data_cache/oof/train_oof.parquet
+python scripts/eval_pipeline.py --part train --oof --beta 30 --tag b30     # one decoder setting on the 80 training trips
+python scripts/eval_pipeline.py --part student_test --tag final            # ONCE, at the end, with the chosen settings
+```
+- OOF scores come from the same LightGBM recipe (stride 3, default parameters) and the same 5 trip-grouped folds (`configs/cv_folds.json`). Check: pooled over folds their Top-1 is 87.48 % (std 3.74), identical to the recorded grouped-CV result.
+- OOF is only for tuning. The final system, the demo and every `student_test`/evaluator number use the single exported model.
+- In code: `predict(trip_dir, DecoderConfig(...), scorer=oof_scorer(trip_id))`.
+- Tunable: `beta_m` (50), `gap_threshold_s` (120), `emission_sigma_m` (off), `unreachable_log_penalty` (-20). Measured cost: about 1 to 7 s per trip, so a full pass over the 80 training trips is roughly 5 to 8 minutes per setting; use a subset of trips, or a coarse search, for exploration.
+- Choose settings with the training trips only. `student_test` is a one-time check; evaluator trips are never used.
+- Record the search space, every trial and the final values; the report's HMM section needs them.

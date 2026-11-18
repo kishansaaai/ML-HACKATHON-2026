@@ -10,6 +10,8 @@ python scripts/train_heavy.py --models lightgbm hist_gb xgboost            # str
 python scripts/train_heavy.py --models extra_trees random_forest --stride 6 --n-estimators 50
 python scripts/tune.py --model lightgbm         # Bayesian search, refit, tuned-vs-untuned, export to artifacts/
 python scripts/ablation.py                      # feature-group ablation (about 25 min)
+python scripts/make_oof_scores.py              # out-of-fold scores, for decoder tuning only
+python scripts/eval_pipeline.py                 # classifier vs classifier+HMM on student_test
 python scripts/analysis_plots.py                # sweep, comparison, calibration, confusion, label quality
 python -m pytest tests/test_ml_pipeline.py
 ```

@@ -14,8 +14,10 @@ same origin through `InferenceComponents.projection_factory`.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
+import pandas as pd
 
 from .candidates import CandidateConfig, build_candidates
 from .clf import score_candidates
@@ -27,8 +29,14 @@ from .geo import TripGraph
 from .io import load_trip
 
 
-def make_components(trip_dir: str | Path, cand_cfg: CandidateConfig | None = None) -> InferenceComponents:
-    """Adapters for one trip. Labels are never loaded (`with_labels=False`)."""
+def make_components(trip_dir: str | Path, cand_cfg: CandidateConfig | None = None,
+                    scorer: Callable[[pd.DataFrame], np.ndarray] | None = None) -> InferenceComponents:
+    """Adapters for one trip. Labels are never loaded (`with_labels=False`).
+
+    `scorer` maps a candidate table to one probability per row. Default: the exported model
+    (`score_candidates`). Pass `pathsnap.oof.oof_scorer(trip_id)` ONLY to tune decoder settings on
+    training trips with honest, out-of-fold scores.
+    """
     trip = load_trip(trip_dir, with_labels=False)
     tgraph = TripGraph(trip)
     table = build_candidates(trip, tgraph, cand_cfg).sort_values("obs_idx", kind="stable").reset_index(drop=True)
@@ -58,12 +66,13 @@ def make_components(trip_dir: str | Path, cand_cfg: CandidateConfig | None = Non
         return table.iloc[kept]                       # same order as the candidate lists
 
     def score(features) -> np.ndarray:
-        return score_candidates(features)
+        return (scorer or score_candidates)(features)
 
     return InferenceComponents(generate, build_features, score, projection_factory)
 
 
 def predict(trip_dir: str | Path, decoder_config: DecoderConfig | None = None,
-            cand_cfg: CandidateConfig | None = None) -> dict:
+            cand_cfg: CandidateConfig | None = None,
+            scorer: Callable[[pd.DataFrame], np.ndarray] | None = None) -> dict:
     """Classifier + HMM route prediction for one trip folder (no ground truth is read)."""
-    return predict_trip(trip_dir, make_components(trip_dir, cand_cfg), decoder_config or DecoderConfig())
+    return predict_trip(trip_dir, make_components(trip_dir, cand_cfg, scorer), decoder_config or DecoderConfig())

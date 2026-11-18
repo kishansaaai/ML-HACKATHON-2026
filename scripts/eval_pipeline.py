@@ -22,15 +22,17 @@ from pathsnap.decoder.metrics import observation_top1, route_continuity
 from pathsnap.geo import TripGraph
 from pathsnap.io import load_trip
 from pathsnap.labels import derive_point_labels
+from pathsnap.oof import oof_scorer
 from pathsnap.paths import DATA_ROOT, RESULTS_DIR, list_trips
 from pathsnap.pipeline import make_components
 from pathsnap.decoder.inference import predict_trip
 
 
-def evaluate_trip(part: str, trip_id: str, cfg: DecoderConfig) -> dict:
+def evaluate_trip(part: str, trip_id: str, cfg: DecoderConfig, oof: bool = False) -> dict:
     trip_dir = DATA_ROOT / part / trip_id
     t0 = time.perf_counter()
-    pred = predict_trip(trip_dir, make_components(trip_dir), cfg)          # no labels used here
+    scorer = oof_scorer(trip_id) if oof else None                          # OOF only for training trips
+    pred = predict_trip(trip_dir, make_components(trip_dir, scorer=scorer), cfg)   # no labels used here
     seconds = time.perf_counter() - t0
     labelled = load_trip(trip_dir, with_labels=True)                        # labels only now
     ref = derive_point_labels(labelled, TripGraph(labelled))
@@ -55,12 +57,16 @@ if __name__ == "__main__":
     ap.add_argument("--gap", type=float, default=DecoderConfig().gap_threshold_s)
     ap.add_argument("--sigma", type=float, default=None, help="optional Gaussian emission distance penalty (m)")
     ap.add_argument("--tag", default="default")
+    ap.add_argument("--oof", action="store_true",
+                    help="score training trips with out-of-fold classifier scores (needs scripts/make_oof_scores.py); use for decoder tuning")
     a = ap.parse_args()
     cfg = DecoderConfig(beta_m=a.beta, gap_threshold_s=a.gap, emission_sigma_m=a.sigma)
+    if a.oof and a.part != "train":
+        ap.error("--oof only applies to --part train (student_test is scored by the exported model, which never saw it)")
     trips = a.trips or list_trips(a.part)
     rows = []
     for tid in trips:
-        rows.append(evaluate_trip(a.part, tid, cfg))
+        rows.append(evaluate_trip(a.part, tid, cfg, a.oof))
         print(rows[-1], flush=True)
     df = pd.DataFrame(rows)
     w = df.n_labelled
@@ -69,4 +75,4 @@ if __name__ == "__main__":
                    clf_continuity=float(df.clf_continuity.mean()), hmm_continuity=float(df.hmm_continuity.mean()),
                    hmm_better_trips=int((df.hmm_top1 > df.clf_top1).sum()), hmm_worse_trips=int((df.hmm_top1 < df.clf_top1).sum()))
     print(summary)
-    df.to_csv(RESULTS_DIR / f"pipeline_{a.part}_{a.tag}.csv", index=False)
+    df.to_csv(RESULTS_DIR / f"pipeline_{a.part}{'_oof' if a.oof else ''}_{a.tag}.csv", index=False)

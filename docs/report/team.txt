@@ -1,6 +1,5 @@
-Team members and roles
-Person A: data pipeline, classifier, integration
-Person B: HMM / Viterbi decoder
-Person C: API, scoring, EDA, simple models
-Person D: evaluator UI
-Names and SRNs: ______________________________
+Team 157 (Section K)
+PES1UG24CS608  Sai Kishan A: data pipeline, classifier, integration
+PES1UG23CS390  Nidhi Poojamrudha T A: HMM / Viterbi decoder
+PES1UG24CS609  Samatma A Bharadwaj: API, scoring, EDA, simple models
+PES1UG25CS838  S H Purvik Gowda: evaluator UI

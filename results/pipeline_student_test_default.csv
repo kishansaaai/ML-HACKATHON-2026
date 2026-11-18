@@ -1,0 +1,2 @@
+part,trip_id,n_obs,n_labelled,clf_top1,hmm_top1,clf_continuity,clf_breaks,hmm_continuity,hmm_breaks,stitched_breaks,seconds
+student_test,00000056,3958,3941,0.9182948490230906,0.9261608728749049,0.9282284559009351,284,0.9643669446550417,141,0,9.76

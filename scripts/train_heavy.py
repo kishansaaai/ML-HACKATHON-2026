@@ -14,7 +14,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from pathsnap.cand_metrics import candidate_metrics, observation_metrics, route_continuity, top1_predictions
+from pathsnap.cand_metrics import (candidate_metrics, distinct_arc_continuity, observation_metrics,
+                                 route_continuity, top1_predictions)
 from pathsnap.data import load_folds, load_part, stride_subsample, trip_arcs, xy
 from pathsnap.models.registry import MODEL_SPECS, SEED, make_model, proba
 from pathsnap.paths import RESULTS_DIR
@@ -24,12 +25,15 @@ def evaluate(df: pd.DataFrame, obs: pd.DataFrame, score: np.ndarray, part: str) 
     m = observation_metrics(df, score, obs)
     m.update(candidate_metrics(df["label"].to_numpy(), score))
     pred = top1_predictions(df, score)
-    conts, breaks = [], 0
+    conts, breaks, dconts = [], 0, []
     for tid, g in pred.groupby("trip_id"):
-        c, b = route_continuity(g.sort_values("obs_idx")["arc_id"].to_numpy(), trip_arcs(part, tid))
+        seq, arcs = g.sort_values("obs_idx")["arc_id"].to_numpy(), trip_arcs(part, tid)
+        c, b = route_continuity(seq, arcs)
         conts.append(c)
         breaks += b
-    m["route_continuity"] = float(np.mean(conts))
+        dconts.append(distinct_arc_continuity(seq, arcs)[0])
+    m["route_continuity"] = float(np.mean(conts))              # official definition
+    m["route_continuity_distinct"] = float(np.mean(dconts))    # stricter, not official
     m["route_breaks"] = breaks
     return m
 
@@ -78,8 +82,10 @@ def run(name: str, stride: int, params: dict | None = None, tag: str = "") -> di
                cv_macro_f1_mean=cv.macro_f1.mean(), cv_macro_f1_std=cv.macro_f1.std(),
                cv_top1_mean=cv.top1.mean(), cv_top1_std=cv.top1.std(), cv_logloss_mean=cv.logloss.mean(),
                cv_route_continuity_mean=cv.route_continuity.mean(),
+               cv_route_continuity_distinct_mean=cv.route_continuity_distinct.mean(),
                test_macro_f1=te["macro_f1"], test_precision=te["precision"], test_recall=te["recall"],
                test_top1=te["top1"], test_logloss=te["logloss"], test_route_continuity=te["route_continuity"],
+               test_route_continuity_distinct=te["route_continuity_distinct"],
                test_route_breaks=te["route_breaks"], test_candidate_miss_rate=te["candidate_miss_rate"],
                train_time_s=train_s, infer_time_s_per_trip=infer_s / test_o.trip_id.nunique(),
                timestamp=datetime.now().isoformat(timespec="seconds"))

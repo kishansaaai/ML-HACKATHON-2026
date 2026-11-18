@@ -9,7 +9,7 @@ Code: `scripts/train_heavy.py`, `scripts/baseline_nearest.py`, `scripts/tune.py`
 
 ## Results (student_test = 10 trips, CV = 5 grouped folds)
 
-| Model | Family | CV Top-1 | test Top-1 | test macro-F1 | test log loss | test route continuity | fit time |
+| Model | Family | CV Top-1 | test Top-1 | test macro-F1 | test log loss | test continuity (distinct-arc, NOT official) | fit time |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | HistGradientBoosting | boosting | 87.55 % | 90.07 % | 0.940 | 0.0488 | 82.9 % | 17 s |
 | **LightGBM (selected)** | boosting | 87.48 % | 90.21 % | 0.941 | 0.0480 | 82.7 % | 12 s |
@@ -17,6 +17,8 @@ Code: `scripts/train_heavy.py`, `scripts/baseline_nearest.py`, `scripts/tune.py`
 | Random Forest (50 trees) | bagging | 87.33 % | 88.81 % | 0.935 | 0.0561 | 83.0 % | 22 s |
 | Extra Trees (50 trees) | randomised trees | 87.03 % | 88.41 % | 0.933 | 0.0561 | 81.8 % | 24 s |
 | Nearest road (no learning) | baseline | 55.36 % | 53.60 % | n/a | n/a | 45.7 % | n/a |
+
+**Continuity column caveat.** The continuity figures in this table use the stricter *distinct-arc* variant (repeated arcs collapsed first, then share of consecutive different arcs that connect head-to-tail). The official metric (`pathsnap.decoder.metrics.route_continuity`, the PRD definition) counts all adjacent point pairs and treats a repeated arc as connected, which gives much higher values. Official values for the exported LightGBM classifier and the HMM are in `docs/notes/integration_a_b.md`; the other models were not re-scored under the official definition.
 
 Fold-to-fold standard deviation of Top-1 is about 3.7 points for every model (folds range from about 82 % to 91 %): some trips are much harder than others.
 

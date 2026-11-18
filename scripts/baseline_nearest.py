@@ -33,7 +33,9 @@ if __name__ == "__main__":
         row = dict(model=name, family="Non-learned baseline", config_json=json.dumps({"rule": name}), seed=42,
                    cv_top1_mean=np.mean([m["top1"] for m in cvs]), cv_top1_std=np.std([m["top1"] for m in cvs], ddof=1),
                    cv_route_continuity_mean=np.mean([m["route_continuity"] for m in cvs]),
+                   cv_route_continuity_distinct_mean=np.mean([m["route_continuity_distinct"] for m in cvs]),
                    test_top1=te["top1"], test_route_continuity=te["route_continuity"],
+                   test_route_continuity_distinct=te["route_continuity_distinct"],
                    test_route_breaks=te["route_breaks"], test_candidate_miss_rate=te["candidate_miss_rate"],
                    timestamp=datetime.now().isoformat(timespec="seconds"))
         append_row(row)

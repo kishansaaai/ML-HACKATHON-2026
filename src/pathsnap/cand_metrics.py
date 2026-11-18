@@ -7,8 +7,10 @@ sequence scores). These helpers cover what model selection needs and use the sam
   is the reference arc. Points whose reference arc is not among the candidates count as wrong.
 * Candidate miss rate: share of reference-defined points whose reference arc is absent.
 * Candidate-level precision / recall / macro-F1 at threshold 0.5, and log loss.
-* Route continuity (classifier-only): after collapsing repeats, share of consecutive predicted
-  arcs that connect head-to-tail.
+* Route continuity (official, identical to `pathsnap.decoder.metrics.route_continuity`): over ALL
+  adjacent predicted pairs, share that are the same arc or connect head-to-tail.
+  `distinct_arc_continuity` is the stricter variant used in the first model comparison (repeats
+  collapsed first); it is NOT the official metric and must be labelled as such wherever quoted.
 """
 from __future__ import annotations
 
@@ -46,7 +48,18 @@ def candidate_metrics(y: np.ndarray, p: np.ndarray, thr: float = 0.5) -> dict:
 
 
 def route_continuity(pred_arcs: np.ndarray, arcs: np.ndarray) -> tuple[float, int]:
-    """(share of connected consecutive distinct arcs, number of breaks)."""
+    """Official definition: (share of adjacent pairs that are same-arc or head-to-tail, break count)."""
+    pred_arcs = np.asarray(pred_arcs)
+    if len(pred_arcs) < 2:
+        return 1.0, 0
+    a, b = pred_arcs[:-1], pred_arcs[1:]
+    ok = (a == b) | (arcs[a, 1] == arcs[b, 0])
+    return float(ok.mean()), int((~ok).sum())
+
+
+def distinct_arc_continuity(pred_arcs: np.ndarray, arcs: np.ndarray) -> tuple[float, int]:
+    """Stricter variant: collapse repeated arcs first, then share of consecutive distinct arcs that connect."""
+    pred_arcs = np.asarray(pred_arcs)
     seq = pred_arcs[np.r_[True, pred_arcs[1:] != pred_arcs[:-1]]]
     if len(seq) < 2:
         return 1.0, 0

@@ -36,7 +36,7 @@ st.markdown(
     """
     <style>
     :root { --muted: rgba(128,128,128,0.95); --line: rgba(128,128,128,0.28); --soft: rgba(128,128,128,0.12); --brand:#0f9d8a; }
-    [data-testid="stToolbar"], [data-testid="stDecoration"], footer { display: none !important; }
+    [data-testid="stToolbarActions"], [data-testid="stMainMenu"], [data-testid="stAppDeployButton"], [data-testid="stDecoration"], footer { display: none !important; }
     .block-container { max-width: 1180px; padding-top: 3.6rem; padding-bottom: 3rem; }
     [data-testid="stHeader"] { background: transparent; }
     html, body, [class*="css"] { font-family: "Inter", "Segoe UI", system-ui, sans-serif; }

@@ -1,6 +1,6 @@
 # ML Hackathon 2026 – Team Plan & PRD
 
-PathSnap must turn noisy 1 Hz GPS tracks into the sequence of road arcs the vehicle really drove, using a trained classifier plus HMM/Viterbi decoding, served by a FastAPI backend on Laptop 1 and shown in a UI on Laptop 2. This plan splits the work across four people: two own the hard modelling and decoding, two own data, API, UI, and report.
+PathSnap must turn noisy 1 Hz GPS tracks into the sequence of road arcs the vehicle really drove, using a trained classifier plus HMM/Viterbi decoding, served by a FastAPI backend on Laptop 1 and shown in a UI on Laptop 2. This plan splits the work across four people: two own the hard modelling and decoding, one (C) owns data, maps, simple models, API, scoring, deployment and report, and one (D) owns a deliberately small evaluator UI and demo support.
 
 ## 1. Problem and goals
 
@@ -61,12 +61,14 @@ Owners are Person A, B (hard track) and C, D (supporting track); see section 3. 
 | FR8 | HMM with Viterbi decoding, gap and disconnection handling | P0 | B |
 | FR9 | Metrics module: Top-1, candidate miss rate, macro F1, precision, recall, log loss, route continuity, sequence-level score | P0 | B |
 | FR10 | Exported artifacts and a single inference entry point used by the API | P0 | A + B |
-| FR11 | FastAPI backend with server-side scoring, request logging | P0 | D |
-| FR12 | Evaluator UI on Laptop 2 | P0 | D |
+| FR11 | FastAPI backend with server-side scoring, request logging | P0 | C |
+| FR12 | Simple evaluator UI on Laptop 2: trip list, run button, map, metric panel; only renders the API's JSON | P0 | D |
 | FR13 | Folium maps: GPS, road network, reference route, predicted route, layer control, legend | P0 | C |
 | FR14 | EDA plots and data-quality record | P0 | C |
 | FR15 | Technical report (PDF) in the mandated structure | P0 | C writes, all supply analysis |
 | FR16 | Repo layout, README, requirements, run scripts | P0 | C |
+| FR17 | Two-laptop setup (IP, firewall, CORS, startup scripts) and integration tests over all 10 `student_test` trips | P0 | C |
+| FR18 | UI screenshots, demo rehearsal checklist, report section 7 text | P0 | D |
 
 ### 2.3 Modelling approach
 
@@ -74,11 +76,11 @@ The classifier scores candidate arcs; the HMM picks the best connected sequence 
 
 ```
 Laptop 2 · evaluator UI
-  Streamlit UI · ten trip cards · map · classifier vs HMM metrics
+  Streamlit UI (Person D) · ten trip cards · map · classifier vs HMM metrics
         │ POST /predict (trip_id)            ▲ route + metrics, no labels
         ▼                                    │
 Laptop 1 · model and API
-  FastAPI (Person D) · /health /trips /predict · logs every request
+  FastAPI (Person C) · /health /trips /predict · logs every request
         │
         ▼
   ┌─ predict_trip sees only .track .nodes .arcs ───────────────────────┐
@@ -88,7 +90,7 @@ Laptop 1 · model and API
         ▲ artifacts (model, scaler, feature order, HMM config)
         │ prediction
         ▼
-  Scoring (Person D): reads .route only AFTER prediction, returns accuracy
+  Scoring (Person C): reads .route only AFTER prediction, returns accuracy
 ```
 
 The UI sends only a trip ID. The prediction path never touches `.route`; the scoring module, which does, runs afterwards on Laptop 1 and returns only metrics.
@@ -155,14 +157,14 @@ Bayesian search (Optuna TPE or scikit-optimize) tunes the winner, objective = me
 
 ## 3. Team split
 
-A and B carry the hard track: the model and the decoder, where the marks and the risk sit. C and D carry the supporting track: data, maps, report, API and UI. Names are not known yet, so people are Person A to D.
+A and B carry the hard track: the model and the decoder, where the marks and the risk sit. C and D carry the supporting track. C is the broad supporting engineer: data, maps, simple models, API, scoring, deployment, tests and report. D has a deliberately small, low-complexity scope: the evaluator UI and demo support. Names are not known yet, so people are Person A to D.
 
 | Person | Track | Owns | Why this difficulty |
 | --- | --- | --- | --- |
 | A | Hard | Candidates, features, label alignment, heavy models, Bayesian search | Label derivation from route-only ground truth and feature design decide whether anything downstream works |
 | B | Hard | Projection, graph, shortest paths, HMM/Viterbi, metrics, `predict_trip` | Graph search on 165k-arc networks must be fast; decoder edge cases (gaps, disconnection) are subtle |
-| C | Supporting | EDA, inventory, Folium, simple models, plots, report, README | Mostly well-trodden libraries; needs care and writing, not new algorithms |
-| D | Supporting | FastAPI, scoring module, UI, logging, two-laptop deployment, integration tests | Standard web work once `predict_trip` has a stable signature |
+| C | Supporting (broad) | EDA, inventory, Folium, simple models, plots, FastAPI, scoring, logging, two-laptop setup, tests, report, README | Mostly well-trodden libraries, but a wide scope; needs care, writing and steady integration work |
+| D | Supporting (minimal) | Simple UI, UI screenshots, demo checklist, report section 7 text | A small page that renders the API's JSON; no algorithms |
 
 ### Person A – ML lead (hard)
 
@@ -191,14 +193,19 @@ A and B carry the hard track: the model and the decoder, where the marks and the
 - Logistic Regression, Gaussian NB and KNN on A's feature table, same CV folds and logging harness. **Easy**
 - Comparison plots: CV macro F1, `student_test` Top-1 and F1, log loss, confusion matrices. **Easy**
 - Own the report PDF, assemble sections, check every number against repo outputs. Own README and repo layout. **Medium (volume)**
-
-### Person D – Serving (supporting)
-
-- FastAPI app: `/health`, `/trips`, `/predict`, startup model loading, request logging to console and file. **Easy to medium**
-- Server-side scoring module that reads `.route` only after prediction; keep it out of the prediction import path. **Medium**
-- UI with ten trip cards, run button, map, metric panel. **Easy to medium**
+- FastAPI app: `/health`, `/trips`, `/predict`, startup model loading, request logging to console and file. Start with a stub that returns canned-shape JSON from the nearest-arc baseline so D can build the UI early; swap in `predict_trip` when B ships it. **Easy to medium**
+- Server-side scoring module (`scoring.py`) that reads `.route` only after prediction; keep it out of the prediction import path. **Medium**
 - Two-laptop setup: IP, firewall, CORS, config file, startup scripts; rehearse with `student_test` as stand-in evaluator trips. **Medium**
-- Integration tests across all 10 `student_test` trips; report section 7 with UI and API-console screenshots.
+- Integration tests across all 10 `student_test` trips, including a test that prediction runs with `.route` removed. **Medium**
+
+### Person D – UI and demo support (supporting, minimal)
+
+- Simple Streamlit page (or plain HTML with Leaflet): list the trip IDs from `GET /trips`, a Run button that sends the selected trip ID to `POST /predict`, then show the returned route on a map next to the raw GPS, plus the returned metrics. The page does no computation. **Easy**
+- Spinner while waiting and a readable message if the API is unreachable or returns an error. **Easy**
+- API base URL in one config value so Laptop 2 can point at Laptop 1. **Easy**
+- Take UI screenshots for the report and write report section 7 (UI and API-console screenshots, with C supplying the console shots). **Easy**
+- Demo checklist: start order, URLs, what to show the evaluator (UI, then API logs on Laptop 1). Run it once with C before the demo. **Easy**
+- Shadow B once (viva pairing) so you can explain the pipeline at a high level.
 
 ### Contracts to freeze in the first hour
 
@@ -210,8 +217,9 @@ These let all four work in parallel against stubs.
 | Trip graph and index | B → A | Projected arc geometry, nearest-arcs query, adjacency |
 | Candidate table | A → B, C | One row per (trip, obs, arc): features, `label`, trip group id; Parquet or CSV |
 | `score_candidates(df) → probs` | A → B | Reads saved artifacts; same feature order as training |
-| `predict_trip(dir) → dict` | B → D | Per-observation classifier arc and HMM arc, route polyline, timings; no labels |
-| `evaluate(trip_id, prediction) → dict` | B + D | Server-side only; loads `.route` itself |
+| `predict_trip(dir) → dict` | B → C | Per-observation classifier arc and HMM arc, route polyline, timings; no labels |
+| `evaluate(trip_id, prediction) → dict` | B + C | Server-side only; loads `.route` itself |
+| `POST /predict` response JSON | C → D | Shape in section 2.4; the UI only renders it |
 
 ### Working agreements
 
@@ -229,8 +237,8 @@ The key schedule move is a thin end-to-end path (nearest-arc baseline through AP
 | --- | --- | --- | --- | --- |
 | A (hard) | Candidates, labels, features | Models + Bayes | Tune, export | Report 3, 4 |
 | B (hard) | Projection, graph, paths | HMM / Viterbi | Tune decoder | Report 5 |
-| C (support) | Loader, EDA, Folium maps | Simple models | Plots, tables | PDF + README |
-| D (support) | API + UI stub, nearest-arc path | Scoring module | Wire real model | Laptop rehearsal |
+| C (support) | Loader, EDA, Folium, API + scoring stub | Simple models, real API | Wire real model, plots, tests | PDF + README, laptop setup |
+| D (support) | UI against stub API | UI polish | UI on Laptop 2 | Screenshots, demo checklist |
 
 Gates: **Contracts frozen** (end of phase 1) → **Thin path live** (end of phase 2) → **Model + decoder frozen** (end of phase 4) → **Submit** (end of phase 5).
 
@@ -242,8 +250,8 @@ Gates: **Contracts frozen** (end of phase 1) → **Thin path live** (end of phas
 | Candidate misses | Reference arc never offered, so no model can win | Tune R and nearest-K on training trips; track miss rate per trip | A |
 | Shortest paths too slow on 165k-arc trips | API takes minutes per trip | Bounded Dijkstra with cutoff, sparse matrices, per-trip graph cache, benchmark early | B |
 | HMM underperforms classifier-only | Weak story for section 5 | Tune β and penalties on train and `student_test`; report honestly where it fails | B |
-| Leakage via `.route` in prediction path | Disqualification risk | Separate scoring module, code review, test that prediction runs with `.route` removed | B, D |
-| Two-laptop networking fails on demo day | No live demo | Rehearse early on the real network, static IP or hotspot, fallback config, bind `0.0.0.0` | D |
+| Leakage via `.route` in prediction path | Disqualification risk | Separate scoring module, code review, test that prediction runs with `.route` removed | B, C |
+| Two-laptop networking fails on demo day | No live demo | Rehearse early on the real network, static IP or hotspot, fallback config, bind `0.0.0.0` | C |
 | Report numbers do not match repo | Integrity flag | Every table generated by a script that writes CSV; C checks each number | C |
 | Team cannot explain AI-assisted code | Viva marks lost | Paired walkthroughs, short design notes per module, AI use disclosed | All |
 | Model files too large for GitHub | Missing artifacts | Pick a compact model, compress, or use Git LFS | A |

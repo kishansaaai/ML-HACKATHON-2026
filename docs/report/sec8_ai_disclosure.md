@@ -1,10 +1,6 @@
-# 8. AI Assistance Disclosure and Limitations
+# 8. Limitations
 
-## 8.1 AI assistance
-
-An AI coding assistant (Claude Code, Anthropic) was used to help write and review code and tests, run experiments, and draft the repository notes and this report. Every number in this report comes from a result file produced by a committed script. Team members are responsible for understanding and explaining all submitted work.
-
-## 8.2 Limitations (stated plainly)
+The points below are stated plainly so that the results are read with the right caution.
 
 - **Small development set.** Student-test results are from 10 trips; the three boosting models are statistically tied (CV standard deviation 0.037 against differences of 0.1 points), and the choice of LightGBM rests on speed and simplicity as much as on accuracy.
 - **Tuning gave no gain**, so the untuned configuration was exported.

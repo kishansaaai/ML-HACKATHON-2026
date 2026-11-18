@@ -55,12 +55,16 @@ if __name__ == "__main__":
     ap.add_argument("--trips", nargs="*")
     ap.add_argument("--beta", type=float, default=DecoderConfig().beta_m)
     ap.add_argument("--gap", type=float, default=DecoderConfig().gap_threshold_s)
-    ap.add_argument("--sigma", type=float, default=None, help="optional Gaussian emission distance penalty (m)")
+    ap.add_argument("--sigma", type=float, default=DecoderConfig().emission_sigma_m,
+                    help="Gaussian emission distance penalty (m); set 0 to disable")
+    ap.add_argument("--unreachable-penalty", type=float, default=DecoderConfig().unreachable_log_penalty)
     ap.add_argument("--tag", default="default")
     ap.add_argument("--oof", action="store_true",
                     help="score training trips with out-of-fold classifier scores (needs scripts/make_oof_scores.py); use for decoder tuning")
     a = ap.parse_args()
-    cfg = DecoderConfig(beta_m=a.beta, gap_threshold_s=a.gap, emission_sigma_m=a.sigma)
+    cfg = DecoderConfig(beta_m=a.beta, gap_threshold_s=a.gap,
+                        emission_sigma_m=a.sigma if a.sigma > 0 else None,
+                        unreachable_log_penalty=a.unreachable_penalty)
     if a.oof and a.part != "train":
         ap.error("--oof only applies to --part train (student_test is scored by the exported model, which never saw it)")
     trips = a.trips or list_trips(a.part)

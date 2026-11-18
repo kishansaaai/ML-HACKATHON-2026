@@ -1,0 +1,12 @@
+{
+  "beta_m": 200.0,
+  "emission_sigma_m": 25.0,
+  "gap_threshold_s": 30.0,
+  "transition_cutoff_m": 10000.0,
+  "unreachable_log_penalty": -5.0,
+  "min_probability": 1e-12,
+  "spatial_cell_m": 128.0,
+  "max_cells_per_arc": 256,
+  "distance_cache_size": 100000,
+  "source_cache_size": 4
+}

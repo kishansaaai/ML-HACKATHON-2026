@@ -1,0 +1,40 @@
+{
+  "tag": "penalty_m10_pilot",
+  "part": "train",
+  "score_source": "OOF LightGBM",
+  "trips": 8,
+  "trip_ids": [
+    "00000001",
+    "00000002",
+    "00000003",
+    "00000004",
+    "00000005",
+    "00000006",
+    "00000008",
+    "00000010"
+  ],
+  "labelled_observations": 18023,
+  "config": {
+    "beta_m": 200.0,
+    "emission_sigma_m": 25.0,
+    "gap_threshold_s": 30.0,
+    "transition_cutoff_m": 10000.0,
+    "unreachable_log_penalty": -10.0,
+    "min_probability": 1e-12,
+    "spatial_cell_m": 128.0,
+    "max_cells_per_arc": 256,
+    "distance_cache_size": 100000,
+    "source_cache_size": 4
+  },
+  "classifier_top1_weighted": 0.7699606058924707,
+  "hmm_top1_weighted": 0.7583088276091661,
+  "top1_delta": -0.011651778283304659,
+  "classifier_continuity_mean_trip": 0.9448232883842723,
+  "hmm_continuity_mean_trip": 0.956124846346778,
+  "classifier_breaks_total": 1074,
+  "hmm_breaks_total": 833,
+  "hmm_better_trips": 5,
+  "hmm_tied_trips": 0,
+  "hmm_worse_trips": 3,
+  "runtime_seconds_sum": 44.71000000000001
+}

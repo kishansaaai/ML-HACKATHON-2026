@@ -156,14 +156,7 @@ def _render_backend_header_banner() -> None:
         return
 
     model = html.escape(str(health.get("model_name") or "unknown"))
-    partition = html.escape(str(health.get("partition") or fallback_partition or "unknown"))
-    dev = _is_mock_or_non_evaluator(health, fallback_partition)
-    note = " · development data" if dev else ""
-    st.markdown(
-        f'<span class="chip">Model <b>{model}</b></span>'
-        f'<span class="chip {"chip-warn" if dev else ""}">Partition <b>{partition}</b>{note}</span>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<span class="chip">Model <b>{model}</b></span>', unsafe_allow_html=True)
 
 
 def _render_sidebar() -> str:
@@ -185,8 +178,8 @@ def _render_sidebar() -> str:
         if health:
             st.markdown('<span class="status-pill status-ok">● Connected</span>', unsafe_allow_html=True)
             st.caption(
-                f"{health.get('_latency_ms', '?')} ms · "
-                f"{health.get('model_name', 'unknown model')} · v{health.get('version', 'n/a')}"
+                f"{health.get('_latency_ms', '?')} ms · v{health.get('version', 'n/a')}  \n"
+                f"Partition: **{health.get('partition', st.session_state.get('partition', 'unknown'))}**"
             )
             if not health.get("model_loaded", True):
                 st.warning("API is reachable, but the model is not loaded.")

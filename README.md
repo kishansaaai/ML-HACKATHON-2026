@@ -15,7 +15,7 @@ decoder turns those scores into one connected route.
 | FastAPI backend (`/health`, `/trips`, `/predict`), server-side scoring | done (`src/pathsnap/api.py`, `scoring.py`) |
 | Evaluator UI (Streamlit + Folium) | done (`ui/`) |
 | EDA, data inventory, simple models (LogReg, NB, KNN) | done (`scripts/`, `reports/`, `results/`) |
-| Technical report (PDF) | generated draft; team-written discussion and deployment screenshots still to do |
+| Technical report | done: `Report.pdf` (editable `Report.docx`); sources in `docs/report/`, built with `scripts/build_report_pdf.py` |
 | Two-laptop run on the evaluator trips | to do at the demo |
 
 ## Repository layout

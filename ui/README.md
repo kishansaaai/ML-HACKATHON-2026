@@ -44,5 +44,5 @@ pip install -r requirements-dev.txt
 
 - [API Contract](../docs/API_CONTRACT.md)
 - [Two-Laptop Demo Checklist](../docs/DEMO_CHECKLIST.md)
-- [Report Section 7 Draft](../docs/REPORT_SECTION_7.md)
+- [Technical report](../Report.pdf)
 - [Person D Viva Prep](../docs/VIVA_PREP_PERSON_D.md)

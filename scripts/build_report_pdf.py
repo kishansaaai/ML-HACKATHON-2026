@@ -5,7 +5,7 @@ Usage:
 
 Input : docs/report/*.md in filename order (sec1_overview.md ... sec8_ai_disclosure.md).
         Missing files are skipped with a printed warning.
-Output: output/pdf/PathSnap_technical_report_final.pdf by default.
+Output: Report.pdf (repository root) by default.
 
 Only reportlab is required (plus matplotlib's bundled DejaVu fonts when available, so
 that Unicode symbols render; otherwise the built-in Helvetica/Courier fonts are used).
@@ -47,7 +47,7 @@ from reportlab.platypus.tableofcontents import TableOfContents
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SRC = REPO_ROOT / "docs" / "report"
-DEFAULT_OUT = REPO_ROOT / "output" / "pdf" / "PathSnap_technical_report_final.pdf"
+DEFAULT_OUT = REPO_ROOT / "Report.pdf"
 
 TITLE = "PathSnap: Distributed Map-Matching and Route Reconstruction"
 COURSE = "Machine Learning"

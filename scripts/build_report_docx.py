@@ -1,6 +1,6 @@
 """Build the editable Word (.docx) version of the technical report from docs/report/*.md.
 
-    python scripts/build_report_docx.py [--src docs/report] [--out output/pdf/PathSnap_technical_report_final.docx]
+    python scripts/build_report_docx.py [--src docs/report] [--out Report.docx]
 
 Plain academic style: Times New Roman, black text, no coloured headings or table fills. Handles the Markdown subset used
 by the report sections: # / ## / ### headings, paragraphs, bullet and numbered lists, pipe tables, standalone images,
@@ -270,6 +270,6 @@ def add_inline_par(doc, text):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", default=str(ROOT / "docs" / "report"))
-    ap.add_argument("--out", default=str(ROOT / "output" / "pdf" / "PathSnap_technical_report_final.docx"))
+    ap.add_argument("--out", default=str(ROOT / "Report.docx"))
     a = ap.parse_args()
     print("wrote", build(Path(a.src), Path(a.out)))

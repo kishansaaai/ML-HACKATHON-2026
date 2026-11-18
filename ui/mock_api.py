@@ -109,7 +109,6 @@ def _mock_predict_without_route(trip_dir: Path) -> dict[str, Any]:
     mid_x = 0.5 * (ax1 + ax2)
     mid_y = 0.5 * (ay1 + ay2)
 
-    # Bounding-box prefilter around trajectory (+300 m) for fast mock lookup
     pad = 300.0
     mask = (
         (mid_x >= px.min() - pad)
@@ -128,7 +127,6 @@ def _mock_predict_without_route(trip_dir: Path) -> dict[str, Any]:
     seg_len2 = dx * dx + dy * dy + 1e-9
     t_feat = time.perf_counter() - t1
 
-    # Mock classifier-only: perpendicular distance to nearest arc (chunked)
     t2 = time.perf_counter()
     n_obs = len(track)
     clf_arcs = np.empty(n_obs, dtype=np.int64)
@@ -149,7 +147,6 @@ def _mock_predict_without_route(trip_dir: Path) -> dict[str, Any]:
         clf_conf[start:end] = np.exp(-best_dist / 25.0)
     t_clf = time.perf_counter() - t2
 
-    # Mock HMM smoothing: 7-point temporal mode filter to preview UI comparison
     t3 = time.perf_counter()
     hmm_arcs = clf_arcs.copy()
     half_win = 3
@@ -159,22 +156,35 @@ def _mock_predict_without_route(trip_dir: Path) -> dict[str, Any]:
         hmm_arcs[i] = Counter(clf_arcs[lo:hi].tolist()).most_common(1)[0][0]
     t_hmm = time.perf_counter() - t3
 
-    # Build map geometry ([lat, lon] order for Folium)
+    # Convert [lon, lat] from raw data into [lat, lon] required by API_CONTRACT.md
     raw_gps = [[round(float(lat), 6), round(float(lon), 6)] for lon, lat in track[:, :2]]
 
-    # Deduplicate consecutive identical arcs for clean route polyline
-    hmm_polyline: list[list[float]] = []
-    last_arc = -1
+    # Build separate connected HMM route segments (split whenever consecutive arcs do not connect)
+    hmm_route_segments: list[list[list[float]]] = []
+    current_seg: list[list[float]] = []
+    prev_arc_id: int | None = None
     for arc_id in hmm_arcs.tolist():
-        if arc_id == last_arc:
+        if arc_id == prev_arc_id:
             continue
-        last_arc = arc_id
         u, v = int(arcs[arc_id, 0]), int(arcs[arc_id, 1])
         p_u = [round(float(nodes[u, 1]), 6), round(float(nodes[u, 0]), 6)]
         p_v = [round(float(nodes[v, 1]), 6), round(float(nodes[v, 0]), 6)]
-        if not hmm_polyline or hmm_polyline[-1] != p_u:
-            hmm_polyline.append(p_u)
-        hmm_polyline.append(p_v)
+
+        disconnected = prev_arc_id is not None and int(arcs[prev_arc_id, 1]) != u
+        if disconnected and current_seg:
+            hmm_route_segments.append(current_seg)
+            current_seg = []
+
+        if not current_seg or current_seg[-1] != p_u:
+            current_seg.append(p_u)
+        current_seg.append(p_v)
+        prev_arc_id = arc_id
+
+    if current_seg:
+        hmm_route_segments.append(current_seg)
+
+    # Optional/legacy flat polyline
+    hmm_polyline = [pt for seg in hmm_route_segments for pt in seg]
 
     clf_segments: list[list[list[float]]] = []
     seen_clf: set[int] = set()
@@ -208,6 +218,7 @@ def _mock_predict_without_route(trip_dir: Path) -> dict[str, Any]:
         "clf_arcs": clf_arcs,
         "hmm_arcs": hmm_arcs,
         "raw_gps": raw_gps,
+        "hmm_route_segments": hmm_route_segments,
         "hmm_route_polyline": hmm_polyline,
         "classifier_route_segments": clf_segments,
         "observations": observations,
@@ -325,10 +336,11 @@ def predict(req: PredictRequest) -> dict[str, Any]:
     clf_acc = metrics.get("classifier_only", {}).get("top1_accuracy", 0.0) * 100
     hmm_acc = metrics.get("hmm", {}).get("top1_accuracy", 0.0) * 100
     hmm_cont = metrics.get("hmm", {}).get("route_continuity", 0.0) * 100
+    hmm_breaks = metrics.get("hmm", {}).get("continuity_breaks", 0)
     print(
         f"[{ts}] POST /predict trip_id={req.trip_id} | obs={len(pred['observations'])} | "
         f"clf_top1={clf_acc:.1f}% | hmm_top1={hmm_acc:.1f}% | continuity={hmm_cont:.1f}% | "
-        f"total={t_total:.2f}s",
+        f"breaks={hmm_breaks} | segments={len(pred['hmm_route_segments'])} | total={t_total:.2f}s",
         flush=True,
     )
 
@@ -337,6 +349,7 @@ def predict(req: PredictRequest) -> dict[str, Any]:
         "model_name": "DEV MOCK (Nearest-Arc Stub)",
         "num_observations": len(pred["observations"]),
         "raw_gps": pred["raw_gps"],
+        "hmm_route_segments": pred["hmm_route_segments"],
         "hmm_route_polyline": pred["hmm_route_polyline"],
         "classifier_route_segments": pred["classifier_route_segments"],
         "observations": pred["observations"],

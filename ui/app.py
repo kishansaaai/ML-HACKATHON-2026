@@ -2,8 +2,8 @@
 
 A lightweight Streamlit + Folium console that communicates strictly with the
 PathSnap FastAPI backend on Laptop 1:
-  - GET  /health   : verify backend and model readiness
-  - GET  /trips    : fetch the 10 evaluation trip IDs
+  - GET  /health   : verify backend readiness, model_name, and partition
+  - GET  /trips    : fetch the evaluation trip IDs
   - POST /predict  : send {"trip_id": ...} and render returned route + metrics
 
 This application performs zero ML inference and never accesses `.route` files.
@@ -11,6 +11,7 @@ This application performs zero ML inference and never accesses `.route` files.
 
 from __future__ import annotations
 
+import html
 from typing import Any
 
 import pandas as pd
@@ -22,6 +23,8 @@ from config import DEFAULT_API_BASE_URL
 from map_renderer import build_trip_map
 
 
+EVALUATOR_PARTITIONS = {"evaluator", "evaluator_test", "evaluator_testing", "eval"}
+
 st.set_page_config(
     page_title="PathSnap — Evaluator Console",
     page_icon="🗺️",
@@ -29,7 +32,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Subtle styling for crisp trip cards and readable metrics
 st.markdown(
     """
     <style>
@@ -43,11 +45,38 @@ st.markdown(
     }
     .status-ok { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
     .status-err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .backend-banner {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+    .backend-banner-red {
+        background: #dc2626;
+        color: #ffffff;
+        border: 2px solid #991b1b;
+    }
+    .backend-banner-green {
+        background: #dcfce7;
+        color: #14532d;
+        border: 1px solid #86efac;
+    }
     .trip-meta {
         font-size: 0.78rem;
         color: #64748b;
         margin-top: -6px;
         margin-bottom: 6px;
+    }
+    .map-break-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 600;
     }
     </style>
     """,
@@ -81,6 +110,16 @@ def _fmt_int(val: Any) -> str:
     return f"{int(val):,}"
 
 
+def _is_mock_or_non_evaluator(health: dict[str, Any], fallback_partition: str | None) -> bool:
+    model_name = str(health.get("model_name") or "")
+    partition = str(health.get("partition") or fallback_partition or "").strip().lower()
+    if "mock" in model_name.lower():
+        return True
+    if partition not in EVALUATOR_PARTITIONS:
+        return True
+    return False
+
+
 def _init_state() -> None:
     defaults: dict[str, Any] = {
         "api_base_url": DEFAULT_API_BASE_URL,
@@ -92,7 +131,7 @@ def _init_state() -> None:
         "selected_trip_id": None,
         "last_prediction": None,
         "last_error": None,
-        "session_scores": {},  # trip_id -> HMM top-1 accuracy from this live session
+        "session_scores": {},
         "bootstrapped": False,
     }
     for key, value in defaults.items():
@@ -120,6 +159,50 @@ def _refresh_backend(api_url: str) -> None:
         st.session_state["trips_error"] = str(exc)
 
 
+def _render_backend_header_banner() -> None:
+    """Always display model_name and partition in the page header with mock-safety banner."""
+    health = st.session_state["health_info"]
+    health_err = st.session_state["health_error"]
+    fallback_partition = st.session_state.get("partition")
+
+    if health is None:
+        if health_err:
+            st.markdown(
+                '<div class="backend-banner backend-banner-red">'
+                "<strong>BACKEND UNREACHABLE</strong> — Cannot verify model_name or partition via <code>GET /health</code>."
+                "</div>",
+                unsafe_allow_html=True,
+            )
+        return
+
+    model_name = str(health.get("model_name") or "unknown")
+    partition = str(health.get("partition") or fallback_partition or "unknown")
+    safe_model = html.escape(model_name)
+    safe_partition = html.escape(partition)
+
+    if _is_mock_or_non_evaluator(health, fallback_partition):
+        st.markdown(
+            f'<div class="backend-banner backend-banner-red">'
+            f'<div style="font-size:1.05rem;font-weight:800;letter-spacing:0.3px;">'
+            f"⚠️ DEV MOCK BACKEND - NOT FOR FINAL EVALUATION"
+            f"</div>"
+            f'<div style="margin-top:4px;font-size:0.88rem;">'
+            f"Backend model: <code>{safe_model}</code> &nbsp;|&nbsp; Active partition: <code>{safe_partition}</code>"
+            f"</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f'<div class="backend-banner backend-banner-green">'
+            f"<strong>✅ Real Backend Connected</strong> &nbsp;|&nbsp; "
+            f"Model: <code>{safe_model}</code> &nbsp;|&nbsp; "
+            f"Partition: <code>{safe_partition}</code>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+
 def _render_sidebar() -> str:
     with st.sidebar:
         st.header("Laptop 1 API Config")
@@ -142,7 +225,7 @@ def _render_sidebar() -> str:
         if health:
             st.markdown('<span class="status-pill status-ok">● Connected</span>', unsafe_allow_html=True)
             st.caption(f"Latency: {health.get('_latency_ms', '?')} ms")
-            st.write(f"**Model:** {health.get('model_name', 'Unknown')}")
+            st.write(f"**Model:** `{health.get('model_name', 'Unknown')}`")
             st.write(f"**Version:** `{health.get('version', 'N/A')}`")
             st.write(f"**Partition:** `{health.get('partition', st.session_state.get('partition', 'N/A'))}`")
             if not health.get("model_loaded", True):
@@ -206,7 +289,6 @@ def _render_metrics_comparison(prediction: dict[str, Any]) -> None:
     hmm = metrics.get("hmm") or {}
     timings = prediction.get("timings_sec") or {}
 
-    # Top KPI strip
     k1, k2, k3, k4 = st.columns(4)
     with k1:
         st.metric(
@@ -244,7 +326,6 @@ def _render_metrics_comparison(prediction: dict[str, Any]) -> None:
             delta_color="off",
         )
 
-    # Detailed side-by-side table + stage timings
     left_col, right_col = st.columns([3, 2])
     with left_col:
         st.markdown("#### Classifier-Only vs. Classifier + HMM")
@@ -285,7 +366,7 @@ def _render_metrics_comparison(prediction: dict[str, Any]) -> None:
 
         st.caption(
             f"**Trip ID:** `{prediction.get('trip_id', 'N/A')}`  \n"
-            f"**Model:** {prediction.get('model_name', 'N/A')}  \n"
+            f"**Model:** `{prediction.get('model_name', 'N/A')}`  \n"
             f"**Observations:** {_fmt_int(prediction.get('num_observations'))}  \n"
             f"**Server Timestamp:** `{prediction.get('server_timestamp', 'N/A')}`"
         )
@@ -293,22 +374,45 @@ def _render_metrics_comparison(prediction: dict[str, Any]) -> None:
 
 def _render_results(prediction: dict[str, Any]) -> None:
     trip_id = prediction.get("trip_id", "unknown")
+    hmm_metrics = (prediction.get("metrics") or {}).get("hmm") or {}
+    route_breaks = hmm_metrics.get("continuity_breaks")
+
     st.divider()
     st.subheader(f"Route Reconstruction Results — Trip `{trip_id}`")
 
     _render_metrics_comparison(prediction)
 
-    st.markdown("#### Interactive Route Map (Folium)")
-    st.caption(
-        "Use the top-right layer selector to toggle **Raw GPS Observations**, "
-        "**HMM / Viterbi Predicted Route**, and **Classifier-Only Predictions**."
-    )
-    fmap = build_trip_map(prediction)
-    # returned_objects=[] prevents unnecessary Streamlit reruns when panning or zooming
-    st_folium(fmap, width=None, height=540, returned_objects=[])
+    render_res = build_trip_map(prediction)
 
-    # Exportable standalone HTML map (useful for offline inspection or report)
-    map_html = fmap.get_root().render()
+    hdr_col, breaks_col = st.columns([3, 2])
+    with hdr_col:
+        st.markdown("#### Interactive Route Map (Folium)")
+        st.caption(
+            "Disconnected route segments are drawn separately (never joined with false lines). "
+            "Use the top-right layer selector to toggle layers."
+        )
+    with breaks_col:
+        breaks_text = _fmt_int(route_breaks)
+        seg_text = _fmt_int(render_res.hmm_segment_count)
+        st.markdown(
+            f'<div style="text-align:right;margin-top:8px;">'
+            f'<span class="map-break-badge">'
+            f"Route Breaks: {breaks_text} &nbsp;|&nbsp; Route Segments Drawn: {seg_text}"
+            f"</span></div>",
+            unsafe_allow_html=True,
+        )
+
+    if render_res.skipped_points > 0:
+        st.warning(
+            f"Skipped **{render_res.skipped_points}** coordinate point(s) outside valid WGS-84 bounds "
+            "(expected `[lat, lon]` with lat in `[-90, 90]` and lon in `[-180, 180]`). "
+            "Verify that the backend converts decoder `[lon, lat]` output to `[lat, lon]`."
+        )
+
+    # returned_objects=[] prevents unnecessary Streamlit reruns when panning or zooming
+    st_folium(render_res.fmap, width=None, height=540, returned_objects=[])
+
+    map_html = render_res.fmap.get_root().render()
     st.download_button(
         label=f"Download Interactive Folium HTML (trip_{trip_id}.html)",
         data=map_html,
@@ -326,7 +430,6 @@ def _render_results(prediction: dict[str, Any]) -> None:
             else:
                 st.info("No per-observation records included in this response.")
         with tab_json:
-            # Show compact summary so large coordinate arrays don't freeze the browser
             summary_json = {
                 k: (f"<list of {len(v)} items>" if isinstance(v, list) else v)
                 for k, v in prediction.items()
@@ -338,7 +441,6 @@ def main() -> None:
     _init_state()
     api_url = _render_sidebar()
 
-    # Auto-connect on initial page load
     if not st.session_state["bootstrapped"]:
         st.session_state["bootstrapped"] = True
         _refresh_backend(api_url)
@@ -348,6 +450,7 @@ def main() -> None:
         "PES University · UE24CS352A Machine Learning Hackathon 2026 · "
         "Laptop 2 Evaluator Console"
     )
+    _render_backend_header_banner()
 
     trips: list[TripSummary] = st.session_state["trips"]
     trips_err = st.session_state["trips_error"]
@@ -368,7 +471,6 @@ def main() -> None:
 
     _render_trip_cards(trips)
 
-    # Action bar to run live prediction for the selected trip
     selected_id = st.session_state["selected_trip_id"]
     run_col, info_col = st.columns([1.4, 3])
     with run_col:

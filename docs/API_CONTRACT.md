@@ -1,8 +1,12 @@
 # PathSnap API Contract (Person C ↔ Person D)
 
-This contract defines the exact HTTP endpoints and JSON payloads between **Laptop 1 (FastAPI Backend — Person C)** and **Laptop 2 (Evaluator UI — Person D)**.
+This contract defines the HTTP endpoints and JSON payloads between **Laptop 1 (FastAPI Backend — Person C)** and **Laptop 2 (Evaluator UI — Person D)**.
 
+> **Example Values Note:** Example values are illustrative only; real results come from the API.
+>
 > **Leakage Rule:** The UI sends **only** `trip_id`. Ground-truth `.route` files remain strictly server-side on Laptop 1 and are **never** returned in any API response.
+>
+> **Coordinate Order:** This contract uses **`[lat, lon]`** (WGS-84 degrees, with `lat` in `[-90, 90]` and `lon` in `[-180, 180]`) for **every** coordinate in every field. The backend is responsible for converting the decoder's internal `[lon, lat]` output to `[lat, lon]` before returning JSON.
 
 ---
 
@@ -16,17 +20,20 @@ This contract defines the exact HTTP endpoints and JSON payloads between **Lapto
 
 ## 1. `GET /health`
 
-Checks that the backend, trained model, scaler, and HMM configuration are loaded.
+Checks that the backend, trained model (plain LightGBM; no feature preprocessing transform), and HMM configuration are loaded.
+
+- `model_name` must be read from `artifacts/model_card.json` (key `"model"`), e.g. `"lightgbm"`.
+- `partition` identifies the active server-side trip directory (e.g. `"evaluator_test"` during final evaluation). The UI shows a red warning banner if `model_name` contains `"MOCK"` (case-insensitive) or if `partition` is not the evaluator partition.
 
 ### Response `200 OK`
 ```json
 {
   "status": "ok",
   "model_loaded": true,
-  "model_name": "LightGBM (Bayesian-tuned)",
-  "version": "1.0.0",
-  "partition": "evaluator_test",
-  "trips_available": 10
+  "model_name": "<string from artifacts/model_card.json key 'model', e.g. lightgbm>",
+  "version": "<semver string>",
+  "partition": "<evaluator_test | student_test>",
+  "trips_available": "<int>"
 }
 ```
 
@@ -34,112 +41,127 @@ Checks that the backend, trained model, scaler, and HMM configuration are loaded
 
 ## 2. `GET /trips`
 
-Lists the 10 reserved evaluation trips discovered from the server-side evaluation folder.
+Lists the evaluation trips discovered from the server-side evaluation folder.
 
 ### Response `200 OK`
 ```json
 {
-  "partition": "evaluator_test",
+  "partition": "<evaluator_test | student_test>",
   "trips": [
     {
-      "trip_id": "00000000",
-      "num_observations": 1520,
-      "num_nodes": 8542,
-      "num_arcs": 18196
+      "trip_id": "<trip_id string>",
+      "num_observations": "<int>",
+      "num_nodes": "<int>",
+      "num_arcs": "<int>"
     }
   ]
 }
 ```
-*(Note: The UI also accepts `{"trips": ["00000000", "00000007", ...]}` as a plain list of trip ID strings.)*
+*(Note: The UI also accepts `{"trips": ["<trip_id>", ...]}` as a plain list of trip ID strings.)*
 
 ---
 
 ## 3. `POST /predict`
 
-Runs the full server-side prediction pipeline (`predict_trip` using `.track`, `.nodes`, `.arcs` only), then computes evaluation metrics in the separate server-side scoring module (`scoring.py`).
+Runs the full server-side prediction pipeline (`predict_trip` using `.track`, `.nodes`, `.arcs` only), converts decoder `[lon, lat]` geometry to `[lat, lon]`, and then computes evaluation metrics in the separate server-side scoring module (`scoring.py`).
 
 ### Request Body
 ```json
 {
-  "trip_id": "00000000"
+  "trip_id": "<trip_id string>"
 }
 ```
 
-### Response `200 OK`
-All map coordinates use **`[lat, lon]`** order (WGS-84 degrees) for direct Folium rendering.
+### Route Geometry & Disconnections
+- **`hmm_route_segments` (primary):** A list of polylines, where each polyline is a list of `[lat, lon]` points representing one contiguous connected route segment. Wherever the decoder encounters a route break / disconnection, it starts a **new** segment in `hmm_route_segments`. The UI draws each segment as an independent `PolyLine` and never draws a connecting line across breaks.
+- **`hmm_route_polyline` (optional / legacy):** A single flat list of `[lat, lon]` points. Used by the UI **only** as a fallback when `hmm_route_segments` is absent.
 
+### Response `200 OK`
 ```json
 {
-  "trip_id": "00000000",
-  "model_name": "LightGBM (Bayesian-tuned)",
-  "num_observations": 1520,
+  "trip_id": "<trip_id string>",
+  "model_name": "<string from artifacts/model_card.json key 'model', e.g. lightgbm>",
+  "num_observations": "<int>",
   "raw_gps": [
-    [56.251559, 54.963519],
-    [56.251523, 54.963143]
+    ["<float lat>", "<float lon>"],
+    ["<float lat>", "<float lon>"]
+  ],
+  "hmm_route_segments": [
+    [
+      ["<float lat>", "<float lon>"],
+      ["<float lat>", "<float lon>"]
+    ],
+    [
+      ["<float lat>", "<float lon>"],
+      ["<float lat>", "<float lon>"]
+    ]
   ],
   "hmm_route_polyline": [
-    [56.251560, 54.963520],
-    [56.251525, 54.963140]
+    ["<float lat>", "<float lon>"],
+    ["<float lat>", "<float lon>"]
   ],
   "classifier_route_segments": [
-    [[56.251560, 54.963520], [56.251525, 54.963140]]
+    [
+      ["<float lat>", "<float lon>"],
+      ["<float lat>", "<float lon>"]
+    ]
   ],
   "observations": [
     {
-      "index": 0,
-      "timestamp": 1.0,
-      "lat": 56.251559,
-      "lon": 54.963519,
-      "classifier_arc_id": 17630,
-      "hmm_arc_id": 17630,
-      "classifier_confidence": 0.91
+      "index": "<int>",
+      "timestamp": "<float seconds>",
+      "lat": "<float lat>",
+      "lon": "<float lon>",
+      "classifier_arc_id": "<int>",
+      "hmm_arc_id": "<int>",
+      "classifier_confidence": "<float 0-1>"
     }
   ],
   "metrics": {
     "classifier_only": {
-      "top1_accuracy": 0.842,
-      "macro_f1": 0.815,
-      "precision": 0.831,
-      "recall": 0.804,
-      "log_loss": 0.214,
-      "route_continuity": 0.786,
-      "continuity_breaks": 62,
-      "sequence_f1": 0.801,
-      "candidate_miss_rate": 0.018
+      "top1_accuracy": "<float 0-1>",
+      "macro_f1": "<float 0-1>",
+      "precision": "<float 0-1>",
+      "recall": "<float 0-1>",
+      "log_loss": "<float >=0 or null>",
+      "route_continuity": "<float 0-1>",
+      "continuity_breaks": "<int >=0>",
+      "sequence_f1": "<float 0-1>",
+      "candidate_miss_rate": "<float 0-1>"
     },
     "hmm": {
-      "top1_accuracy": 0.934,
-      "macro_f1": 0.912,
-      "precision": 0.920,
-      "recall": 0.906,
-      "log_loss": null,
-      "route_continuity": 0.992,
-      "continuity_breaks": 2,
-      "sequence_f1": 0.928,
-      "candidate_miss_rate": 0.018
+      "top1_accuracy": "<float 0-1>",
+      "macro_f1": "<float 0-1>",
+      "precision": "<float 0-1>",
+      "recall": "<float 0-1>",
+      "log_loss": "<float >=0 or null>",
+      "route_continuity": "<float 0-1>",
+      "continuity_breaks": "<int >=0>",
+      "sequence_f1": "<float 0-1>",
+      "candidate_miss_rate": "<float 0-1>"
     }
   },
   "timings_sec": {
-    "load_and_index": 0.42,
-    "candidates_and_features": 0.68,
-    "classifier_inference": 0.11,
-    "hmm_viterbi": 1.35,
-    "server_scoring": 0.04,
-    "total": 2.60
+    "load_and_index": "<float seconds>",
+    "candidates_and_features": "<float seconds>",
+    "classifier_inference": "<float seconds>",
+    "hmm_viterbi": "<float seconds>",
+    "server_scoring": "<float seconds>",
+    "total": "<float seconds>"
   },
-  "server_timestamp": "2026-11-18T11:30:00Z"
+  "server_timestamp": "<ISO-8601 UTC string>"
 }
 ```
 
 ### Error Responses
-- `404 Not Found`: `{"detail": "Trip '99999999' not found."}`
+- `404 Not Found`: `{"detail": "Trip '<trip_id>' not found."}`
 - `500 Internal Server Error`: `{"detail": "Inference failed: <reason>"}`
 
 ---
 
 ## Logging Requirement (Laptop 1 Console)
 
-Every `POST /predict` request must print a clear console log line on Laptop 1 for the evaluator, e.g.:
+Every `POST /predict` request must print a live console log line on Laptop 1 for the evaluator, e.g.:
 ```text
-[2026-11-18 11:30:00] POST /predict trip_id=00000000 | obs=1520 | clf_top1=84.2% | hmm_top1=93.4% | continuity=99.2% | total=2.60s
+[<ISO-8601 UTC>] POST /predict trip_id=<trip_id> | obs=<int> | clf_top1=<float>% | hmm_top1=<float>% | continuity=<float>% | breaks=<int> | total=<float>s
 ```

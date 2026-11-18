@@ -15,8 +15,8 @@ decoder turns those scores into one connected route.
 | FastAPI backend (`/health`, `/trips`, `/predict`), server-side scoring | done (`src/pathsnap/api.py`, `scoring.py`) |
 | Evaluator UI (Streamlit + Folium) | done (`ui/`) |
 | EDA, data inventory, simple models (LogReg, NB, KNN) | done (`scripts/`, `reports/`, `results/`) |
-| Technical report (PDF) | generated draft; team-written discussion and deployment screenshots still to do |
-| Two-laptop run on the evaluator trips | to do at the demo |
+| Technical report (PDF) | consolidated report source in `docs/report/`; rebuild with `python scripts/build_report_pdf.py`; team review and genuine demo screenshots remain required |
+| Two-laptop run on the evaluator trips | not yet evidenced; complete `docs/DEMO_CHECKLIST.md` and add genuine screenshots before submission |
 
 ## Repository layout
 
@@ -104,7 +104,7 @@ uvicorn pathsnap.api:app --app-dir src --host 0.0.0.0 --port 8000
 
 On Windows, `scripts\\run_api.cmd` starts the service using `.venv`. The service defaults to the 10-trip `student_test` partition. Set `PATHSNAP_EVALUATOR_DIR` to the evaluator trip folder before launch to serve evaluator data; startup fails unless that directory contains exactly 10 valid trip folders. It never silently falls back to development data. Optional `PATHSNAP_CORS_ORIGINS` configures UI origins and `PATHSNAP_LOG_FILE` changes the log path.
 
-API endpoints match the contract in `docs/API_CONTRACT.md`: `/health`, `/trips`, and `/predict`. `/predict` accepts only a trip ID, returns predicted map layers/metrics, and never exposes ground truth. Scoring opens `.route` only after `pathsnap.pipeline` has finished prediction. `python scripts/evaluate_api.py` re-times the 10 development trips and checks the saved official pipeline Top-1 results. `python scripts/build_report.py` rebuilds `output/pdf/PathSnap_technical_report.pdf` from saved repository metrics.
+API endpoints match the contract in `docs/API_CONTRACT.md`: `/health`, `/trips`, and `/predict`. `/predict` accepts only a trip ID, returns predicted map layers/metrics, and never exposes ground truth. Scoring opens `.route` only after `pathsnap.pipeline` has finished prediction. `python scripts/evaluate_api.py` re-times the 10 development trips and checks the saved official pipeline Top-1 results. Build the consolidated, eight-section report from `docs/report/` with `python scripts/build_report_pdf.py`; it writes `output/pdf/PathSnap_technical_report.pdf`.
 
 ## Tests
 

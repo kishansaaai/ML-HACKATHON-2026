@@ -305,7 +305,7 @@ The second baseline shows how much of the task is solved by distance plus direct
 | Calibration | results/plots/calibration_lightgbm.png (student test, ECE 0.0027) | Final model only |
 | Candidate radius | results/plots/candidate_sweep.png | See Section 2.4 |
 | Training and validation loss curves | None | N/A: the models were fitted without recording epoch-wise histories (HistGradientBoosting has early stopping off, src/pathsnap/models/registry.py), and no artificial curves were created. [MISSING: no iteration-wise validation log exists for LightGBM or XGBoost in results/] |
-| Folium maps | reports/eda_map.html and reports/figures/report_map_view.png (EDA, train trip 00000001) | EDA map only here; prediction maps in Section 6 |
+| Folium maps | reports/eda_map.html and reports/figures/prediction_map_00000052.png (four-layer prediction map, student_test trip 00000052) | Interactive map: reports/prediction_map_00000052.html; generation in scripts/make_prediction_map.py |
 
 What the plots show (read from results/plots/model_comparison.png): the CV and student-test Top-1 bars of the three boosting models are visually indistinguishable and the error bars (std over 5 folds) overlap those of Extra Trees and Random Forest; the two non-learned baselines are clearly lower, with the heading rule far above nearest road. In the confusion matrices (results/plots/confusion_all_models.png) the false negatives (correct arc not chosen at threshold 0.5) outnumber false positives for every model.
 

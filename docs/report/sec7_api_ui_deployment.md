@@ -53,10 +53,10 @@ Real `GET /health` output captured from the running service (one development mac
 `src/pathsnap/api.py` logs to the console and to a file (default `logs/api.log`, override with `PATHSNAP_LOG_FILE`). Every successful `POST /predict` writes one line of this form (format string in the source):
 
 ```
-<time> INFO [<UTC timestamp>] POST /predict trip_id=<id> | obs=<n> | clf_top1=<pct> | hmm_top1=<pct> | continuity=<pct> | total=<s>s
+<time> INFO [<UTC timestamp>] POST /predict trip_id=<id> | obs=<n> | clf_top1=<pct> | hmm_top1=<pct> | continuity=<pct> | breaks=<int> | total=<s>s
 ```
 
-uvicorn additionally prints `GET /health`, `GET /trips` and `POST /predict` access lines with HTTP status. Failures are logged with a stack trace via `logger.exception`. Note: the log format in `docs/API_CONTRACT.md` also lists `breaks=<int>`; the implemented line does not include it [MISSING: decide whether to update the contract or the code; not changed here].
+uvicorn additionally prints `GET /health`, `GET /trips` and `POST /predict` access lines with HTTP status. Failures are logged with a stack trace via `logger.exception`. For trips without reference routes, the line reports `metrics=n/a` instead of label-derived scores.
 
 ## 7.6 Timings
 

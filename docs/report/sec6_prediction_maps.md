@@ -58,23 +58,25 @@ Reading the table honestly: the HMM improves continuity on every trip except 000
 
 ## 6.5 Representative map and what it shows
 
-Representative map: `python scripts/make_prediction_map.py --trip 00000052 --part student_test` writes `reports/prediction_map_00000052.html`: one Folium map with four toggleable layers (raw GPS points, road network of the trip, reference route drawn after prediction, predicted classifier + HMM route). It is a development-trip map and must never be run on evaluator data.
+Representative map: `python scripts/make_prediction_map.py --trip 00000052 --part student_test` writes the interactive Folium map `reports/prediction_map_00000052.html` and the static PDF view `reports/figures/prediction_map_00000052.png`. Both are generated from the same development trip and show four distinct layers: raw GPS points, the trip road network, the reference route loaded only after prediction, and the predicted classifier + HMM route. The map is development evidence and must never be generated from evaluator data.
+
+![Trip 00000052: raw GPS, road network, reference route and predicted route](reports/figures/prediction_map_00000052.png)
 
 Draft caption (verify against the real map before use): "Trip 00000052 (student_test): blue dots are the 262 raw GPS observations; the green line is the HMM/Viterbi route. In a live UI run of this trip on one development machine, the KPI card showed HMM Top-1 98.09% and 11 continuity breaks (matches the table above), with the route following one main road." The classifier-only route can be shown by ticking its layer.
 
-## 6.6 Gaps against the section 6 requirement (resolve before submission)
+## 6.6 Requirement coverage and data boundary
 
-The guideline (`Deliverables.pdf`, section 6) asks for four layers: original GPS, relevant road-network geometry, reference route where available, and predicted route.
+The four-layer development map satisfies the requested exported map view. It is produced by `scripts/make_prediction_map.py`; that script first predicts using track and road files only, then separately loads the reference route for visualization. It is intentionally a separate report artifact from the evaluator UI, which does not receive the reference route or road geometry.
 
-| Required layer | Present in the prediction map? | Notes |
+| Required layer | Present in the development map? | Notes |
 | --- | --- | --- |
 | Original GPS observations | Yes | Raw GPS Observations layer |
 | Predicted route | Yes | HMM / Viterbi layer (plus optional classifier-only layer) |
-| Road-network geometry | No | The API does not return road geometry, and `ui/map_renderer.py` has no road layer. The EDA map (`scripts/make_eda_map.py`) does have a sampled road-network layer (off by default, at most 2500 arcs). |
-| Reference route | No | By design: `.route` stays server-side and is never sent to the UI (see section 7). The EDA map has a "Reference route (.route)" layer for development trips. |
+| Road-network geometry | Yes | Rendered from the selected trip's `.nodes` and `.arcs` files, cropped to the GPS extent plus a small margin. |
+| Reference route | Yes, for development trips with labels | Loaded only after `predict()` returns; never sent to the UI/API prediction response. |
 
-Options for the team (a decision for the team, not made here): (a) state clearly in the report that the evaluator-facing prediction map omits road network and reference route to preserve the no-leakage rule, and show a development-only comparison map that includes them for one `student_test` trip, produced by committed code; or (b) extend a development script to overlay the prediction on the EDA map layers. Whichever is chosen, the map-generation code must be in the repository and the PDF must say which partition the map uses.
+The map caption and title identify `student_test`; this is a development visualization, not evaluator evidence. Keep the UI's prediction-only behavior unchanged so the no-leakage boundary remains intact.
 
 ## 6.7 Items the team must still do
 
-* [MISSING: team-written comparison discussion for cases where HMM decoding did not help (trips 00000007, 00000077, 00000091).]
+* [TEAM ACTION: replace the AI-assisted draft caption with the team's own reading of the map and explain at least one case where HMM decoding reduced Top-1 (see trips 00000007, 00000077 and 00000091 in the table).]

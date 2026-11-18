@@ -4,20 +4,20 @@ Purpose: every number in the PDF report must be verifiable from the repo. This m
 script that produces the evidence and the file that holds it. It is an index, not report text: the analysis
 and explanations must be written by the team in their own words and every member must be able to explain them.
 
-Status as of this commit (integration/a-b): DONE = evidence exists and was reproduced; PARTIAL; MISSING.
+Status reflects the current report sources and saved evidence; DONE = evidence exists and was reproduced; PARTIAL; MISSING.
 
 | Report section | Evidence (script -> file) | Status |
 | --- | --- | --- |
 | 2.2 preprocessing, patterns, features | `src/pathsnap/{io,geo,labels,candidates,features}.py`; `docs/notes/candidates_labels_features.md`; `results/label_stats.csv`, `results/label_quality.csv`, `results/candidate_sweep.csv` | DONE |
-| 2.2 missing-value analysis, GPS and road-network plots, Folium map | Person C branch: `scripts/inventory.py`, `plot_eda.py`, `make_eda_map.py` -> `results/data_inventory.*`, `reports/` | PARTIAL (on C's branch, not merged) |
+| 2.2 missing-value analysis, GPS and road-network plots, Folium map | `scripts/inventory.py`, `plot_eda.py`, `make_eda_map.py` -> `results/data_inventory.*`, `reports/` | PARTIAL |
 | 3.1 comparison table (>= 5 models) | `scripts/train_heavy.py`, `baseline_nearest.py`, `rerun_all_models.sh` -> `results/experiments.csv`, `results/metrics_table.csv` | DONE (5 boosting/ensemble models + 2 baselines); C adds 3 simple models |
 | 3.2 per-model questions A-C | numbers in `results/metrics_table.csv`, `docs/notes/models_and_tuning.md`; overfitting evidence: train Top-1 94.5 % vs CV 87.5 % | MISSING: team writes the answers |
 | 3.3 plots (CV macro-F1, test Top-1/F1, log loss, confusion matrices) | `scripts/analysis_plots.py` -> `results/plots/model_comparison.png`, `confusion_all_models.png`, `calibration_lightgbm.png` | DONE |
 | 4 Bayesian optimisation | `scripts/tune.py`, `src/pathsnap/tuning.py` -> `results/tuning_trials_lightgbm.csv`, `tuning_summary_lightgbm.json`, tuned row in `experiments.csv` | DONE (34 trials, no gain over untuned) |
 | 5 HMM / Viterbi | `src/pathsnap/decoder/`, `docs/section5_decoder.md`; classifier vs HMM on `student_test`: `results/hmm_tuning/final_student_test_check.csv` (one check after the settings were frozen) | DONE |
 | 5 decoder tuning on training trips | `scripts/tune_hmm.py`, `configs/decoder_best.json`, `results/hmm_tuning/` (8-trip pilot sweep, then all 80 training trips with out-of-fold scores; failure cases in `failure_analysis_top10.csv`) | DONE (verified by re-running `student_test`) |
-| 6 Folium prediction map (GPS, network, reference, predicted) | UI: `ui/map_renderer.py` (Person D branch); needs real API output | PARTIAL |
-| 7 API, UI, deployment screenshots | `src/pathsnap/api.py` (Person C branch), `ui/` (Person D branch), `scripts/run_api.*` | MISSING (needs two-laptop run and screenshots) |
+| 6 Folium prediction map (GPS, network, reference, predicted) | `scripts/make_prediction_map.py` -> `reports/prediction_map_00000052.html`, `reports/figures/prediction_map_00000052.png` | DONE for a development trip; evaluator UI intentionally receives no ground truth |
+| 7 API, UI, deployment screenshots | `src/pathsnap/api.py`, `ui/`, `scripts/run_api.*` | MISSING (needs genuine two-laptop run and screenshots) |
 | 8 AI-use disclosure | root `README.md` states AI assistance; team to confirm wording | PARTIAL |
 
 ## Rules the evidence must respect

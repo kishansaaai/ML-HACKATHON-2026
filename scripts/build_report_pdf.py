@@ -5,7 +5,7 @@ Usage:
 
 Input : docs/report/*.md in filename order (sec1_overview.md ... sec8_ai_disclosure.md).
         Missing files are skipped with a printed warning.
-Output: output/pdf/PathSnap_technical_report_final.pdf by default.
+Output: output/pdf/PathSnap_technical_report.pdf by default.
 
 Only reportlab is required (plus matplotlib's bundled DejaVu fonts when available, so
 that Unicode symbols render; otherwise the built-in Helvetica/Courier fonts are used).
@@ -47,19 +47,19 @@ from reportlab.platypus.tableofcontents import TableOfContents
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SRC = REPO_ROOT / "docs" / "report"
-DEFAULT_OUT = REPO_ROOT / "output" / "pdf" / "PathSnap_technical_report_final.pdf"
+DEFAULT_OUT = REPO_ROOT / "output" / "pdf" / "PathSnap_technical_report.pdf"
 
 TITLE = "PathSnap: Distributed Map-Matching and Route Reconstruction"
 COURSE = "Machine Learning"
 INSTITUTION = "PES University, Department of Computer Science and Engineering, RR Campus"
 EXPECTED_FILES = [
     "sec1_overview.md",
-    "sec2_data_eda.md",
+    "sec2_data_preprocessing.md",
     "sec3_models.md",
-    "sec4_bayes_opt.md",
-    "sec5_hmm.md",
-    "sec6_folium.md",
-    "sec7_api_ui.md",
+    "sec4_bayesian_optimisation.md",
+    "sec5_hmm_viterbi.md",
+    "sec6_prediction_maps.md",
+    "sec7_api_ui_deployment.md",
     "sec8_ai_disclosure.md",
 ]
 DRAFT_MARKER = "DRAFT prepared with AI assistance"

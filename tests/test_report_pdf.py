@@ -46,7 +46,7 @@ def _write_sections(src: Path, png: Path) -> None:
         "## Goals\n\n- first item\n- second item that is long " + "word " * 40 + "\n\n1. one\n2. two\n",
         encoding="utf-8",
     )
-    (src / "sec2_data_eda.md").write_text(
+    (src / "sec2_data_preprocessing.md").write_text(
         "# Data\n\n| Model | Macro F1 | A very long column heading that has to wrap | Notes |\n"
         "|---|---|---|---|\n"
         "| LightGBM | 0.91 | " + "wrapping text " * 20 + " | a_very_long_unbroken_identifier_" + "x" * 60 + " |\n"
@@ -76,7 +76,7 @@ def test_build_pdf_with_synthetic_sections(tmp_path, capsys):
     assert _page_count(out) > 1
     printed = capsys.readouterr().out
     # sections 4..8 are absent: warning, not an error
-    assert "missing section file, skipped: sec4_bayes_opt.md" in printed
+    assert "missing section file, skipped: sec4_bayesian_optimisation.md" in printed
     # absent figure is reported and rendered as a placeholder
     assert "missing figure: results/plots/does_not_exist.png" in printed
 

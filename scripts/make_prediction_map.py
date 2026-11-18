@@ -81,6 +81,60 @@ def build_map(trip_id: str, part: str) -> folium.Map:
     return fmap
 
 
+def build_static_view(trip_id: str, part: str, out: Path) -> Path:
+    """Export the same development trip as a four-layer static figure for the PDF."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    trip_dir = DATA_ROOT / part / trip_id
+    pred = predict(trip_dir)
+    trip = load_trip(trip_dir, with_labels=True)
+    fig, ax = plt.subplots(figsize=(10, 7), constrained_layout=True)
+    pad = 0.004
+    lo, hi = trip.lon.min() - pad, trip.lon.max() + pad
+    bot, top = trip.lat.min() - pad, trip.lat.max() + pad
+    for u, v in trip.arcs:
+        (x1, y1), (x2, y2) = trip.node_lonlat[int(u)], trip.node_lonlat[int(v)]
+        if max(x1, x2) < lo or min(x1, x2) > hi or max(y1, y2) < bot or min(y1, y2) > top:
+            continue
+        ax.plot([x1, x2], [y1, y2], color="#888888", linewidth=0.45, alpha=0.55)
+    ax.scatter(trip.lon[::max(1, trip.n_obs // 1500)], trip.lat[::max(1, trip.n_obs // 1500)],
+               s=5, c="#d62728", alpha=0.65, label="Raw GPS observations", zorder=3)
+
+    def draw_arcs(arc_ids, label, color, width):
+        xs, ys, previous_to = [], [], None
+        first = True
+        for arc_id in arc_ids:
+            u, v = (int(x) for x in trip.arcs[int(arc_id)])
+            if previous_to is not None and u != previous_to:
+                if xs:
+                    ax.plot(xs, ys, color=color, linewidth=width, label=label if first else None, zorder=4)
+                    first = False
+                xs, ys = [], []
+            if not xs:
+                xs.append(float(trip.node_lonlat[u, 0]))
+                ys.append(float(trip.node_lonlat[u, 1]))
+            xs.append(float(trip.node_lonlat[v, 0]))
+            ys.append(float(trip.node_lonlat[v, 1]))
+            previous_to = v
+        if xs:
+            ax.plot(xs, ys, color=color, linewidth=width, label=label if first else None, zorder=4)
+
+    draw_arcs(trip.route.tolist(), "Reference route (loaded after prediction)", "#ff7f0e", 2.0)
+    draw_arcs(pred["route_arc_ids"], "Predicted classifier + HMM route", "#1f77b4", 1.7)
+    ax.plot([], [], color="#888888", linewidth=1, label="Trip road network")
+    ax.set(xlim=(lo, hi), ylim=(bot, top), xlabel="Longitude", ylabel="Latitude",
+           title=f"Trip {trip_id} ({part}): GPS, road network, reference and predicted route")
+    ax.legend(loc="best", fontsize=8)
+    ax.grid(alpha=0.15)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=180)
+    plt.close(fig)
+    return out
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--trip", default="00000052")
@@ -90,3 +144,6 @@ if __name__ == "__main__":
     out.parent.mkdir(parents=True, exist_ok=True)
     build_map(a.trip, a.part).save(str(out))
     print("saved", out, f"({out.stat().st_size / 1e6:.2f} MB)")
+    image = ROOT / "reports" / "figures" / f"prediction_map_{a.trip}.png"
+    build_static_view(a.trip, a.part, image)
+    print("saved PDF map view", image)

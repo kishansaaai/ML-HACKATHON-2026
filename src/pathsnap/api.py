@@ -299,11 +299,13 @@ def predict(request: PredictRequest):
             clf = metrics_out["classifier_only"]["top1_accuracy"]
             hmm = metrics_out["hmm"]["top1_accuracy"]
             continuity = metrics_out["hmm"]["route_continuity"]
-            logger.info("[%s] POST /predict trip_id=%s | obs=%d | clf_top1=%s | hmm_top1=%s | continuity=%s | total=%.2fs",
+            breaks = metrics_out["hmm"]["continuity_breaks"]
+            logger.info("[%s] POST /predict trip_id=%s | obs=%d | clf_top1=%s | hmm_top1=%s | continuity=%s | breaks=%s | total=%.2fs",
                         now, request.trip_id, len(observations),
                         f"{clf:.1%}" if clf is not None else "n/a",
                         f"{hmm:.1%}" if hmm is not None else "n/a",
-                        f"{continuity:.1%}" if continuity is not None else "n/a", timings["total"])
+                        f"{continuity:.1%}" if continuity is not None else "n/a",
+                        breaks if breaks is not None else "n/a", timings["total"])
         else:
             logger.info("[%s] POST /predict trip_id=%s | obs=%d | metrics=n/a | total=%.2fs",
                         now, request.trip_id, len(observations), timings["total"])

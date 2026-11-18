@@ -23,7 +23,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -66,10 +66,10 @@ EXPECTED_FILES = [
 DRAFT_MARKER = "DRAFT prepared with AI assistance"
 DRAFT_NOTE = "Contains draft sections: the team must rewrite them in its own words."
 
-ACCENT = colors.HexColor("#1f4e79")
-GRID = colors.HexColor("#9aa5b1")
-HEAD_BG = colors.HexColor("#dce6f1")
-CODE_BG = colors.HexColor("#f3f4f6")
+ACCENT = colors.black          # plain academic look: black text, no coloured headings or table fills
+GRID = colors.black
+HEAD_BG = colors.white
+CODE_BG = colors.white
 
 # --------------------------------------------------------------------------- fonts
 
@@ -78,8 +78,21 @@ _UNICODE_FONTS = False
 
 
 def _setup_fonts() -> None:
-    """Register DejaVu fonts shipped with matplotlib (Unicode-safe); fall back to Helvetica."""
+    """Register Times New Roman / Courier New when present (Windows), else DejaVu fonts shipped with matplotlib; fall back to Helvetica."""
     global BODY, BODY_B, BODY_I, BODY_BI, MONO, _UNICODE_FONTS
+    try:
+        wf = Path(r"C:\Windows\Fonts")
+        need = {"TNR": "times.ttf", "TNR-B": "timesbd.ttf", "TNR-I": "timesi.ttf", "TNR-BI": "timesbi.ttf", "CourierNew": "cour.ttf", "CourierNew-B": "courbd.ttf"}
+        if all((wf / f).exists() for f in need.values()):
+            for name, f in need.items():
+                if name not in pdfmetrics.getRegisteredFontNames():
+                    pdfmetrics.registerFont(TTFont(name, str(wf / f)))
+            pdfmetrics.registerFontFamily("TNR", normal="TNR", bold="TNR-B", italic="TNR-I", boldItalic="TNR-BI")
+            BODY, BODY_B, BODY_I, BODY_BI, MONO = "TNR", "TNR-B", "TNR-I", "TNR-BI", "CourierNew"
+            _UNICODE_FONTS = True
+            return
+    except Exception:  # pragma: no cover
+        pass
     try:
         import matplotlib
 
@@ -120,7 +133,7 @@ def _safe(text: str) -> str:
 
 def make_styles() -> dict[str, ParagraphStyle]:
     s: dict[str, ParagraphStyle] = {}
-    s["body"] = ParagraphStyle("body", fontName=BODY, fontSize=9.5, leading=13.5, spaceAfter=5)
+    s["body"] = ParagraphStyle("body", fontName=BODY, fontSize=11, leading=14.5, spaceAfter=6, alignment=TA_JUSTIFY)
     s["h1"] = ParagraphStyle("Heading1", parent=s["body"], fontName=BODY_B, fontSize=17, leading=21,
                              textColor=ACCENT, spaceBefore=0, spaceAfter=10, keepWithNext=1)
     s["h2"] = ParagraphStyle("Heading2", parent=s["body"], fontName=BODY_B, fontSize=13, leading=16,
@@ -131,11 +144,11 @@ def make_styles() -> dict[str, ParagraphStyle]:
                              spaceBefore=6, spaceAfter=2, keepWithNext=1)
     s["bullet"] = ParagraphStyle("bullet", parent=s["body"], leftIndent=16, bulletIndent=4, spaceAfter=2)
     s["quote"] = ParagraphStyle("quote", parent=s["body"], fontName=BODY_I, leftIndent=12,
-                                borderPadding=(2, 2, 2, 6), textColor=colors.HexColor("#444444"))
+                                borderPadding=(2, 2, 2, 6), textColor=colors.black)
     s["code"] = ParagraphStyle("code", fontName=MONO, fontSize=7.5, leading=9.5, backColor=CODE_BG,
                                borderColor=GRID, borderWidth=0.4, borderPadding=4, spaceBefore=4, spaceAfter=8)
     s["caption"] = ParagraphStyle("caption", parent=s["body"], fontName=BODY_I, fontSize=8, leading=10,
-                                  alignment=TA_CENTER, textColor=colors.HexColor("#444444"), spaceAfter=8)
+                                  alignment=TA_CENTER, textColor=colors.black, spaceAfter=8)
     s["missing"] = ParagraphStyle("missing", parent=s["body"], fontName=BODY_B, textColor=colors.HexColor("#b00020"),
                                   backColor=colors.HexColor("#fdecea"), borderColor=colors.HexColor("#b00020"),
                                   borderWidth=0.6, borderPadding=6, alignment=TA_CENTER, spaceBefore=4, spaceAfter=10)
@@ -152,6 +165,9 @@ def make_styles() -> dict[str, ParagraphStyle]:
     s["toc1"] = ParagraphStyle("toc1", parent=s["body"], fontSize=9, leading=12, leftIndent=14, rightIndent=14)
     s["cell"] = ParagraphStyle("cell", parent=s["body"], fontSize=8, leading=10, spaceAfter=0, splitLongWords=1)
     s["cellh"] = ParagraphStyle("cellh", parent=s["cell"], fontName=BODY_B)
+    for _k in ("h1", "h2", "h3", "h4", "cell", "cellh", "code", "toc0", "toc1", "note", "missing"):
+        if _k in s:
+            s[_k].alignment = 0  # left-aligned; only running body text is justified
     return s
 
 
@@ -175,14 +191,14 @@ def inline(text: str) -> str:
     text = _CODE_RE.sub(stash, text)
     text = escape(text)
     text = _LINK_RE.sub(
-        lambda m: (f'<a href="{m.group(2)}" color="#1f4e79">{m.group(1)}</a>'
+        lambda m: (f'<a href="{m.group(2)}" color="#000000">{m.group(1)}</a>'
                    if m.group(2).startswith(("http://", "https://")) else m.group(1)),
         text,
     )
     text = _BOLD_RE.sub(r"<b>\1</b>", text)
     text = _ITAL_RE.sub(r"<i>\1</i>", text)
     text = re.sub(r"\x00(\d+)\x00",
-                  lambda m: f'<font face="{MONO}" size="8.2" color="#7a1f3d">{escape(codes[int(m.group(1))])}</font>',
+                  lambda m: f'<font face="{MONO}" size="9" color="#000000">{escape(codes[int(m.group(1))])}</font>',
                   text)
     return text
 
@@ -220,7 +236,7 @@ class ReportDoc(BaseDocTemplate):
     def _footer(canvas, doc):
         canvas.saveState()
         canvas.setFont(BODY, 8)
-        canvas.setFillColor(colors.HexColor("#555555"))
+        canvas.setFillColor(colors.black)
         canvas.drawString(doc.leftMargin, 11 * mm, _safe("PathSnap technical report | UE24CS352A"))
         canvas.drawRightString(doc.leftMargin + doc.width, 11 * mm, f"Page {doc.page}")
         canvas.setStrokeColor(GRID)
@@ -336,7 +352,6 @@ class Builder:
             ("RIGHTPADDING", (0, 0), (-1, -1), 3),
             ("TOPPADDING", (0, 0), (-1, -1), 2),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f7f9fb")]),
         ]))
         return [t, Spacer(1, 8)]
 
